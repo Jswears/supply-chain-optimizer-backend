@@ -1,0 +1,48 @@
+{
+  "name": "supply-chain-optimizer-backend",
+  "version": "1.0.0",
+  "description": "A cloud-based inventory optimization system utilizing AI forecasting to enhance supply chain efficiency for eCommerce, warehouses, and retailers.",
+  "scripts": {
+    "test": "echo \"Error: no tests set up yet\" && exit 1",
+    "format": "prettier --write 'src/**/*.{js,jsx,ts,tsx}'",
+    "format:check": "prettier --check .",
+    "lint": "eslint 'src/**/*.{js,jsx,ts,tsx}'",
+    "lint:fix": "eslint --fix 'src/**/*.{s,jsx,ts,tsx}'",
+    "prepare": "husky",
+    "commitlint": "commitlint --edit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jswears/supply-chain-optimizer-backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Jswears/supply-chain-optimizer-backend/issues"
+  },
+  "homepage": "https://github.com/Jswears/supply-chain-optimizer-backend#readme",
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.0",
+    "@commitlint/config-conventional": "^19.8.0",
+    "@eslint/js": "^9.22.0",
+    "eslint": "^9.22.0",
+    "eslint-plugin-prettier": "^5.2.3",
+    "globals": "^16.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.27.0"
+  },
+  "lint-staged": {
+    "src/**/*.{js,ts,json,md}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.formatOnSave": false, // disable VSCode default formatter, use ESLint to handle formatting
+  "eslint.validate": ["javascript", "typescript"],
+  "eslint.run": "onType", // optional: show issues as you type (can be removed if too noisy)
+  "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+  "files.eol": "\n",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true
+}
