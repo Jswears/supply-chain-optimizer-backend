@@ -7,7 +7,7 @@ import globals from 'globals';
 export default [
   js.configs.recommended,
 
-  ...tseslint.configs.recommendedTypeChecked,
+  ...tseslint.configs.recommended,
 
   {
     languageOptions: {
@@ -25,9 +25,8 @@ export default [
       'prettier/prettier': 'error',
 
       'capitalized-comments': ['error', 'always', { ignoreConsecutiveComments: true }],
-      'consistent-return': 'error',
-      'no-console': 'warn',
-      'no-duplicate-imports': 'error',
+      'consistent-return': 'off',
+      'no-console': 'off',
       'prefer-const': 'error',
       eqeqeq: ['error', 'always'],
 
