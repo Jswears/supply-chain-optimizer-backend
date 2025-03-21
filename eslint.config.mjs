@@ -31,10 +31,6 @@ export default [
       eqeqeq: ['error', 'always'],
 
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/explicit-function-return-type': [
-        'warn',
-        { allowExpressions: true, allowConciseArrowFunctionExpressionsStartingWithVoid: true },
-      ],
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/prefer-ts-expect-error': 'warn',
