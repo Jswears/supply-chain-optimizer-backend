@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ES2021",
-    "module": "commonjs",
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
     "lib": ["ES2021"],
     "strict": true,
     "noImplicitAny": true,
@@ -14,5 +15,5 @@
     "outDir": "./dist",
     "rootDir": "./src",
   },
-  "include": ["src/**/*", "eslint.config.mjs", "commitlint.config.mjs"]
+  "include": ["src/**/*", "eslint.config.mjs", "commitlint.config.mjs", "tests"]
 }
