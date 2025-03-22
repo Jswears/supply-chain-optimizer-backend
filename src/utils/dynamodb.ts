@@ -25,7 +25,7 @@ const docClient = DynamoDBDocumentClient.from(client);
 export const INVENTORY_TABLE_NAME = process.env.INVENTORY_TABLE_NAME || '';
 
 // DynamoDB utility functions
-export const dynamodb = {
+export const dynamoDb = {
   put: async (params: PutCommandInput) => {
     const command = new PutCommand(params);
     return await docClient.send(command);
