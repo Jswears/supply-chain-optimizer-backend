@@ -1,8 +1,8 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
 import { nanoid } from 'nanoid';
-import { errorResponse, successResponse } from '../../utils/response.js';
-import { productSchema, validateInput } from '../../utils/validators/inventoryValidation.js';
-import { dynamodb, INVENTORY_TABLE_NAME } from '../../utils/dynamodb.js';
+import { errorResponse, successResponse } from '../../utils/response';
+import { productSchema, validateInput } from '../../utils/validators/inventoryValidation';
+import { dynamoDb, INVENTORY_TABLE_NAME } from '../../utils/dynamodb';
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
@@ -18,7 +18,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       product_id: `PROD-${nanoid(8)}`,
     };
 
-    await dynamodb.put({
+    await dynamoDb.put({
       TableName: INVENTORY_TABLE_NAME,
       Item: productItem,
     });

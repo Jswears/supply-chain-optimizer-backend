@@ -1,6 +1,6 @@
 import winston from 'winston';
 import WinstonCloudwatch from 'winston-cloudwatch';
-import type { LogContext } from '../types';
+import type { LogContext } from '../types/utils';
 
 const { combine, timestamp, printf, align, json, colorize } = winston.format;
 
