@@ -173,3 +173,7 @@ override.tf.json
 .terraformrc
 terraform.rc
 notes.md
+
+#zipped
+zipped/
+*.zip
