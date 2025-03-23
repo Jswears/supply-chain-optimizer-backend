@@ -1,8 +1,11 @@
 import winston from 'winston';
 import WinstonCloudwatch from 'winston-cloudwatch';
 import type { LogContext } from '../types/utils';
+import { v4 } from 'uuid';
 
 const { combine, timestamp, json } = winston.format;
+
+export const correlationId = v4();
 
 export class StructuredLogger {
   private logger: winston.Logger;

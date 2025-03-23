@@ -3,11 +3,9 @@ import { nanoid } from 'nanoid';
 import { errorResponse, successResponse } from '../../utils/response';
 import { productSchema, validateInput } from '../../utils/validators/inventoryValidation';
 import { dynamoDb, INVENTORY_TABLE_NAME } from '../../utils/dynamodb';
-import { StructuredLogger } from '../../utils/logger';
-import { v4 } from 'uuid';
+import { correlationId, StructuredLogger } from '../../utils/logger';
 
 export const handler: APIGatewayProxyHandler = async (event) => {
-  const correlationId = v4();
   const logger = new StructuredLogger({
     correlationId,
     service: 'inventory-service',
