@@ -37,6 +37,20 @@ Resources:
         Variables:
           INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
 
+  GetProductLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "ChainOptGetProduct-${Environment}"
+      Handler: getProduct.handler
+      Runtime: nodejs22.x
+      Timeout: 10
+      MemorySize: 256
+      Role: arn:aws:iam::891376911200:role/ChainOptGetProductRole-dev
+      CodeUri: ../build/getProduct.zip
+      Environment:
+        Variables:
+          INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
+
 Outputs:
   AddProductLambdaArn:
     Description: ARN of the AddProduct Lambda function
@@ -44,3 +58,7 @@ Outputs:
   GetAllProductsLambdaArn:
     Description: ARN of the GetAllProducts Lambda function
     Value: !GetAtt GetAllProductsLambda.Arn
+  GetProductLambdaArn:
+    Description: ARN of the GetProduct Lambda function
+    Value: !GetAtt GetProductLambda.Arn
+

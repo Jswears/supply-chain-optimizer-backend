@@ -18,22 +18,22 @@ deploy_database() {
 
 package_lambda() {
     echo "Packaging lambda functions"
-    aws cloudformation package --template-file infrastructure/templates/inventory-stack.yml \
+    aws cloudformation package --template-file infrastructure/templates/inventory-stack.yaml \
         --s3-bucket $S3_BUCKET \
         --s3-prefix $S3_PREFIX \
-        --output-template-file infrastructure/templates/packaged/inventory-stack-packaged.yml
+        --output-template-file infrastructure/templates/packaged/inventory-stack-packaged.yaml
 }
 
 deploy_lambda() {
     echo "Deploying lambda functions"
-    aws cloudformation deploy --template-file infrastructure/templates/packaged/inventory-stack-packaged.yml \
+    aws cloudformation deploy --template-file infrastructure/templates/packaged/inventory-stack-packaged.yaml \
         --stack-name ChainOptInventoryStack \
         --capabilities CAPABILITY_NAMED_IAM
 }
 
 update_inventory_stack() {
     echo "Updating inventory stack"
-aws cloudformation update-stack --stack-name ChainOptInventoryStack --template-body file://infrastructure/templates/packaged/inventory-stack-packaged.yml --capabilities CAPABILITY_NAMED_IAM
+aws cloudformation update-stack --stack-name ChainOptInventoryStack --template-body file://infrastructure/templates/packaged/inventory-stack-packaged.yaml --capabilities CAPABILITY_NAMED_IAM
 }
 
 deploy_all() {
