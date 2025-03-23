@@ -34,7 +34,7 @@ async function buildAndZip() {
       });
 
       console.log(`Zipping ${functionName}...`);
-      await zipDirectory(functionDistDir, `zipped/${functionName}.zip`);
+      await zipDirectory(functionDistDir, `infrastructure/build/${functionName}.zip`);
     }),
   );
 
