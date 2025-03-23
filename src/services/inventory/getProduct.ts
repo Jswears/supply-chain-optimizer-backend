@@ -16,9 +16,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   });
   try {
     const productId = event.pathParameters?.id;
+    const warehouseId = event.queryStringParameters?.warehouseId;
 
-    if (!productId) {
-      logger.log('error', 'Product ID is required', { correlationId });
+    if (!productId || !warehouseId) {
+      logger.log('error', 'Product ID and Warehouse ID are required', { correlationId });
       return errorResponse(new Error('Product ID is required'), 400);
     }
 
@@ -26,15 +27,16 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       TableName: INVENTORY_TABLE_NAME,
       Key: {
         product_id: productId,
+        warehouse_id: warehouseId,
       },
     });
 
     if (!result.Item) {
-      logger.log('info', 'Product not found', { productId, correlationId });
+      logger.log('info', 'Product not found', { productId, warehouseId, correlationId });
       return errorResponse(new Error('Product not found'), 404);
     }
 
-    logger.log('info', 'Product found', { productId, correlationId });
+    logger.log('info', 'Product found', { productId, warehouseId, correlationId });
     return successResponse(result.Item);
   } catch (error) {
     return errorResponse(error instanceof Error ? error : new Error(String(error)));
