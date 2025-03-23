@@ -2,7 +2,7 @@ import winston from 'winston';
 import WinstonCloudwatch from 'winston-cloudwatch';
 import type { LogContext } from '../types/utils';
 
-const { combine, timestamp, printf, align, json, colorize } = winston.format;
+const { combine, timestamp, json } = winston.format;
 
 export class StructuredLogger {
   private logger: winston.Logger;
@@ -11,48 +11,34 @@ export class StructuredLogger {
   constructor(context: LogContext) {
     this.context = context;
     this.logger = winston.createLogger({
-      format: combine(
-        colorize(),
-        timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-        align(),
-        json(),
-        printf((info) => `[${info.timestamp}] ${info.level}: ${info.message}`),
-      ),
+      level: 'debug',
+      format: combine(timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }), json()),
       transports: [
-        new winston.transports.Console(),
         new WinstonCloudwatch({
           logGroupName: `/aws/${context.environment}/${context.service}`,
           logStreamName: `application-${new Date().toISOString().split('T')[0]}`,
           awsRegion: process.env.AWS_REGION,
+          jsonMessage: true,
+        }),
+        new winston.transports.Console({
+          format: combine(timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }), json()),
         }),
       ],
     });
   }
+
   public log(
     level: 'info' | 'warn' | 'error' | 'debug',
     message: string,
     additionalData?: Record<string, unknown>,
   ): void {
     const logEntry = {
-      ...this.context,
-      level: level.toUpperCase(),
+      level,
       message,
+      ...this.context,
       ...additionalData,
       timestamp: new Date().toISOString(),
     };
-    switch (level) {
-      case 'info':
-        this.logger.info(logEntry);
-        break;
-      case 'warn':
-        this.logger.warn(logEntry);
-        break;
-      case 'error':
-        this.logger.error(logEntry);
-        break;
-      case 'debug':
-        this.logger.debug(logEntry);
-        break;
-    }
+    this.logger.log(level, logEntry);
   }
 }

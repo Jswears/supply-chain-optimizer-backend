@@ -7,7 +7,7 @@ import path from 'path';
 
 console.log('Cleaning dist and zipped folders...');
 fs.rmSync('dist', { recursive: true, force: true });
-fs.rmSync('zipped', { recursive: true, force: true });
+fs.rmSync('infrastructure/build', { recursive: true, force: true });
 
 console.log('🔃Building...');
 
@@ -42,8 +42,8 @@ async function buildAndZip() {
 }
 
 async function zipDirectory(sourceDir: string, outPath: string) {
-  if (!fs.existsSync('zipped')) {
-    fs.mkdirSync('zipped');
+  if (!fs.existsSync('infrastructure/build')) {
+    fs.mkdirSync('infrastructure/build', { recursive: true });
   }
 
   return new Promise<void>((resolve, reject) => {
