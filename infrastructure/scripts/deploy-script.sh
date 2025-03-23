@@ -4,7 +4,6 @@
 # Variables
 S3_BUCKET=chainopt-cf-artifacts
 S3_PREFIX=lambdas
-
 deploy_iam_roles() {
     aws cloudformation deploy   --template-file infrastructure/templates/iam.yml \
         --stack-name ChainOptIamRoles \
@@ -25,4 +24,23 @@ package_lambda() {
         --output-template-file infrastructure/templates/packaged/inventory-stack-packaged.yml
 }
 
-package_lambda
+deploy_lambda() {
+    echo "Deploying lambda functions"
+    aws cloudformation deploy --template-file infrastructure/templates/packaged/inventory-stack-packaged.yml \
+        --stack-name ChainOptInventoryStack \
+        --capabilities CAPABILITY_NAMED_IAM
+}
+
+update_inventory_stack() {
+    echo "Updating inventory stack"
+aws cloudformation update-stack --stack-name ChainOptInventoryStack --template-body file://infrastructure/templates/packaged/inventory-stack-packaged.yml --capabilities CAPABILITY_NAMED_IAM
+}
+
+deploy_all() {
+    echo "Deploying all resources"
+    deploy_iam_roles
+    package_lambda
+    deploy_lambda
+}
+
+deploy_all

@@ -9,40 +9,74 @@ Parameters:
     Default: dev
 
 Resources:
-    ChainOptAddProductRole:
-        Type: 'AWS::IAM::Role'
-        Properties:
-            RoleName: !Sub 'ChainOptAddProductRole-${Environment}'
-            AssumeRolePolicyDocument:
-                Version: '2012-10-17'
-                Statement:
-                    - Effect: Allow
-                      Principal:
-                          Service: lambda.amazonaws.com
-                      Action: 'sts:AssumeRole'
-            Policies:
-                - PolicyName: 'ChainOptAddProductPolicy'
-                  PolicyDocument:
-                      Version: '2012-10-17'
-                      Statement:
-                          - Effect: Allow
-                            Action:
-                                - 'dynamodb:PutItem'
-                            Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ChainOptInventory-${Environment}'
-                - PolicyName: 'ChainOptAddProductLogPolicy'
-                  PolicyDocument:
-                      Version: '2012-10-17'
-                      Statement:
-                          - Effect: Allow
-                            Action:
-                                - 'logs:CreateLogGroup'
-                                - 'logs:CreateLogStream'
-                                - 'logs:PutLogEvents'
-                            Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/ChainOptAddProduct-${Environment}:*'
+  ChainOptAddProductRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'ChainOptAddProductRole-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: 'ChainOptAddProductPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:PutItem'
+                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ChainOptInventory-${Environment}'
+        - PolicyName: 'ChainOptAddProductLogPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/ChainOptAddProduct-${Environment}:*'
+
+  ChainOptGetAllProductsRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'ChainOptGetAllProductsRole-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: 'ChainOptGetAllProductsPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:Scan'
+                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ChainOptInventory-${Environment}'
+        - PolicyName: 'ChainOptGetAllProductsLogPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/ChainOptGetAllProducts-${Environment}:*'
 
 Outputs:
-    ChainOptAddProductRoleArn:
-        Value: !GetAtt ChainOptAddProductRole.Arn
-    ChainOptAddProductRoleName:
-        Value: !Ref ChainOptAddProductRole
-
+  ChainOptAddProductRoleArn:
+    Value: !GetAtt ChainOptAddProductRole.Arn
+  ChainOptAddProductRoleName:
+    Value: !Ref ChainOptAddProductRole
+  ChainOptGetAllProductsRoleArn:
+    Value: !GetAtt ChainOptGetAllProductsRole.Arn
+  ChainOptGetAllProductsRoleName:
+    Value: !Ref ChainOptGetAllProductsRole
