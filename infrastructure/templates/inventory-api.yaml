@@ -23,7 +23,7 @@ Resources:
 
   ChainOptInventoryApiDeployment:
     Type: AWS::ApiGateway::Deployment
-    DependsOn: [InventoryProductsMethodGET, InventoryProductsMethodPOST, InventoryProductMethodGET, InventoryProductsByWarehouseIdMethodGET]
+    DependsOn: [InventoryProductsMethodGET, InventoryProductsMethodPOST, InventoryProductMethodGET, InventoryProductsByWarehouseIdMethodGET, InventoryProductMethodDelete, InventoryProductMethodPUT]
     Properties:
       RestApiId: !Ref ChainOptInventoryApi
       Description: "Deployment for Inventory API"
@@ -144,7 +144,7 @@ Resources:
 
 
 ######################################################
-# 3) /inventory/products/{id} Resource
+# 3) /inventory/products/{productId} Resource
 ######################################################
   InventoryProductResource:
     Type: AWS::ApiGateway::Resource
@@ -153,7 +153,7 @@ Resources:
       PathPart: "{productId}"
       RestApiId: !Ref ChainOptInventoryApi
 
-# GET /inventory/products/{id} Method
+# GET /inventory/products/{productId} Method
   InventoryProductMethodGET:
     Type: AWS::ApiGateway::Method
     Properties:
@@ -199,7 +199,30 @@ Resources:
       MethodResponses:
         - StatusCode: 204
 
-# OPTIONS /inventory/products/{id} Method for CORS support (preflight request) // This needs to be changed when adding more methods.
+# PUT /inventory/products/{productId}
+  InventoryProductMethodPUT:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: PUT
+      ResourceId: !Ref InventoryProductResource
+      RestApiId: !Ref ChainOptInventoryApi
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "ChainOptUpdateProductLambdaArn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 200
+
+# OPTIONS /inventory/products/{productId} Method for CORS support (preflight request) // This needs to be changed when adding more methods.
   InventoryProductMethodOPTIONS:
     Type: AWS::ApiGateway::Method
     Properties:
@@ -217,7 +240,7 @@ Resources:
             ResponseParameters:
               method.response.header.Access-Control-Allow-Origin: "'*'"
               method.response.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
-              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET,DELETE'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET,DELETE,PUT'"
             ResponseTemplates:
               application/json: ""
       MethodResponses:
@@ -348,6 +371,15 @@ Resources:
     Properties:
       FunctionName: !ImportValue
         Fn::Sub: "ChainOptGetAllProductsByWarehouseIdLambdaArn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+# UpdateProduct Lambda Permission
+  UpdateProductLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "ChainOptUpdateProductLambdaArn-${Environment}"
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
 

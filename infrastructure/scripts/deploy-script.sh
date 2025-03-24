@@ -53,4 +53,4 @@ deploy_all() {
 
 }
 
-deploy_api
+deploy_all

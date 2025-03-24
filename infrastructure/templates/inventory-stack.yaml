@@ -79,6 +79,20 @@ Resources:
         Variables:
           INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
 
+  UpdateProductLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "ChainOptUpdateProduct-${Environment}"
+      Handler: updateProduct.handler
+      Runtime: nodejs22.x
+      Timeout: 10
+      MemorySize: 256
+      Role: arn:aws:iam::891376911200:role/ChainOptUpdateProductRole-dev
+      CodeUri: ../build/updateProduct.zip
+      Environment:
+        Variables:
+          INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
+
 Outputs:
   AddProductLambdaArn:
     Description: ARN of the AddProduct Lambda function
@@ -105,5 +119,10 @@ Outputs:
     Value: !GetAtt DeleteProductLambda.Arn
     Export:
       Name: !Sub "ChainOptDeleteProductLambdaArn-${Environment}"
+  UpdateProductLambdaArn:
+    Description: ARN of the UpdateProduct Lambda function
+    Value: !GetAtt UpdateProductLambda.Arn
+    Export:
+      Name: !Sub "ChainOptUpdateProductLambdaArn-${Environment}"
 
 
