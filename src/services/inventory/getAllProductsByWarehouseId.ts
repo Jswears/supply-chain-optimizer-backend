@@ -40,6 +40,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     logger.log('info', 'Products found', { count: result.Items.length, correlationId });
     return successResponse(result.Items || []);
   } catch (error) {
+    logger.log('error', 'Error deleting product', {
+      error: error instanceof Error ? error.message : String(error),
+      correlationId,
+    });
     return errorResponse(error instanceof Error ? error : new Error(String(error)));
   }
 };
