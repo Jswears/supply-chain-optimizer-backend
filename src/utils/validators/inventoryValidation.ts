@@ -3,7 +3,7 @@ import Joi from 'joi';
 export const productSchema = Joi.object({
   product_id: Joi.string().optional(),
   warehouse_id: Joi.string().required(),
-  name: Joi.string().required(),
+  product_name: Joi.string().required(),
   stock_level: Joi.number().min(0).required(),
   reorder_threshold: Joi.number().min(0).required(),
   supplier: Joi.string().required(),
