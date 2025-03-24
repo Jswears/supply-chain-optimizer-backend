@@ -12,10 +12,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   logger.log('info', 'Received getProduct request', {
     correlationId,
-    productId: event.pathParameters?.id,
+    productId: event.pathParameters?.productId,
   });
   try {
-    const productId = event.pathParameters?.id;
+    const productId = event.pathParameters?.productId;
     const warehouseId = event.queryStringParameters?.warehouseId;
 
     if (!productId || !warehouseId) {
