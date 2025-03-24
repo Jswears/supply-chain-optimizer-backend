@@ -33,16 +33,28 @@ Resources:
           KeyType: RANGE
       BillingMode: PAY_PER_REQUEST
       GlobalSecondaryIndexes:
-        - IndexName: !Sub "GSI_Category-${Environment}"
+        - IndexName: !Sub "GSI-Category"
           KeySchema:
             - AttributeName: category
               KeyType: HASH
+            - AttributeName: product_id
+              KeyType: RANGE
           Projection:
             ProjectionType: ALL
-        - IndexName: !Sub "GSI_Supplier-${Environment}"
+        - IndexName: !Sub "GSI-Supplier"
           KeySchema:
             - AttributeName: supplier
               KeyType: HASH
+            - AttributeName: product_id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: !Sub "GSI-Warehouse"
+          KeySchema:
+            - AttributeName: warehouse_id
+              KeyType: HASH
+            - AttributeName: product_id
+              KeyType: RANGE
           Projection:
             ProjectionType: ALL
       SSESpecification:
