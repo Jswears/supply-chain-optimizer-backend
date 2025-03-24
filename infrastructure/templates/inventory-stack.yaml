@@ -55,10 +55,17 @@ Outputs:
   AddProductLambdaArn:
     Description: ARN of the AddProduct Lambda function
     Value: !GetAtt AddProductLambda.Arn
+    Export:
+      Name: !Sub "ChainOptAddProductLambdaArn-${Environment}"
   GetAllProductsLambdaArn:
     Description: ARN of the GetAllProducts Lambda function
     Value: !GetAtt GetAllProductsLambda.Arn
+    Export:
+      Name: !Sub "ChainOptGetAllProductsLambdaArn-${Environment}"
   GetProductLambdaArn:
     Description: ARN of the GetProduct Lambda function
     Value: !GetAtt GetProductLambda.Arn
+    Export:
+      Name: !Sub "ChainOptGetProductLambdaArn-${Environment}"
+
 

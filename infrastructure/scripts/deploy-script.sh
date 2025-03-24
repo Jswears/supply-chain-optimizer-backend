@@ -5,13 +5,13 @@
 S3_BUCKET=chainopt-cf-artifacts
 S3_PREFIX=lambdas
 deploy_iam_roles() {
-    aws cloudformation deploy   --template-file infrastructure/templates/iam.yml \
+    aws cloudformation deploy   --template-file infrastructure/templates/iam.yaml \
         --stack-name ChainOptIamRoles \
         --capabilities CAPABILITY_NAMED_IAM
 }
 
 deploy_database() {
-    aws cloudformation deploy   --template-file infrastructure/templates/database.yml \
+    aws cloudformation deploy   --template-file infrastructure/templates/database.yaml \
         --stack-name ChainOptDatabase \
         --capabilities CAPABILITY_NAMED_IAM
 }
@@ -36,11 +36,21 @@ update_inventory_stack() {
 aws cloudformation update-stack --stack-name ChainOptInventoryStack --template-body file://infrastructure/templates/packaged/inventory-stack-packaged.yaml --capabilities CAPABILITY_NAMED_IAM
 }
 
+deploy_api() {
+    echo "Deploying API Gateway"
+    aws cloudformation deploy --template-file infrastructure/templates/inventory-api.yaml \
+        --stack-name ChainOptApi \
+        --capabilities CAPABILITY_NAMED_IAM
+}
+
 deploy_all() {
     echo "Deploying all resources"
+    deploy_database
     deploy_iam_roles
     package_lambda
     deploy_lambda
+    deploy_api
+
 }
 
-deploy_all
+deploy_api
