@@ -45,7 +45,7 @@ deploy_api() {
 
 deploy_all() {
     echo "Deploying all resources"
-    deploy_database
+    # deploy_database
     deploy_iam_roles
     package_lambda
     deploy_lambda
@@ -53,4 +53,4 @@ deploy_all() {
 
 }
 
-deploy_api
+deploy_iam_roles

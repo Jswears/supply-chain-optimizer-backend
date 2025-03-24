@@ -23,7 +23,7 @@ Resources:
 
   ChainOptInventoryApiDeployment:
     Type: AWS::ApiGateway::Deployment
-    DependsOn: [InventoryProductsMethodGET, InventoryProductsMethodPOST, InventoryProductMethodGET]
+    DependsOn: [InventoryProductsMethodGET, InventoryProductsMethodPOST, InventoryProductMethodGET, InventoryProductsByWarehouseIdMethodGET]
     Properties:
       RestApiId: !Ref ChainOptInventoryApi
       Description: "Deployment for Inventory API"
@@ -204,6 +204,81 @@ Resources:
             method.response.header.Access-Control-Allow-Headers: true
             method.response.header.Access-Control-Allow-Methods: true
 
+######################################################
+# 4) /warehouse/{warehouseId}/products Resource
+######################################################
+  WarehouseResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt ChainOptInventoryApi.RootResourceId
+      PathPart: warehouse
+      RestApiId: !Ref ChainOptInventoryApi
+
+  WarehouseIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref WarehouseResource
+      PathPart: "{warehouseId}"
+      RestApiId: !Ref ChainOptInventoryApi
+
+  InventoryProductsByWarehouseIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref WarehouseIdResource
+      PathPart: products
+      RestApiId: !Ref ChainOptInventoryApi
+
+# GET /warehouse/{warehouseId}/products Method
+  InventoryProductsByWarehouseIdMethodGET:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: GET
+      ResourceId: !Ref InventoryProductsByWarehouseIdResource
+      RestApiId: !Ref ChainOptInventoryApi
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "ChainOptGetAllProductsByWarehouseIdLambdaArn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 200
+
+# OPTIONS /warehouse/{warehouseId}/products Method for CORS support (preflight request) // This needs to be changed when adding more methods.
+  InventoryProductsByWarehouseIdMethodOPTIONS:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: OPTIONS
+      ResourceId: !Ref InventoryProductsByWarehouseIdResource
+      RestApiId: !Ref ChainOptInventoryApi
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        PassthroughBehavior: NEVER
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET'"
+            ResponseTemplates:
+              application/json: ""
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+
 
 ######################################################
 # Lambda Permissions
@@ -232,6 +307,15 @@ Resources:
     Properties:
       FunctionName: !ImportValue
         Fn::Sub: "ChainOptGetProductLambdaArn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+# GetAllProductsByWarehouseId Lambda Permission
+  GetAllProductsByWarehouseIdLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "ChainOptGetAllProductsByWarehouseIdLambdaArn-${Environment}"
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
 
