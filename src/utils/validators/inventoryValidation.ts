@@ -13,6 +13,17 @@ export const productSchema = Joi.object({
     .default(() => new Date().toISOString().split('T')[0]),
 });
 
+export const updateProductSchema = Joi.object({
+  product_id: Joi.string().optional(),
+  warehouse_id: Joi.string().optional(),
+  product_name: Joi.string().optional(),
+  stock_level: Joi.number().min(0).optional(),
+  reorder_threshold: Joi.number().min(0).optional(),
+  supplier: Joi.string().optional(),
+  category: Joi.string().optional(),
+  last_updated: Joi.date().iso().optional(),
+}).min(1);
+
 export const validateInput = <T>(schema: Joi.ObjectSchema, data: T) => {
   const { error, value } = schema.validate(data);
   if (error) {
