@@ -133,6 +133,38 @@ Resources:
                   - 'logs:PutLogEvents'
                 Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/ChainOptGetAllProductsByWarehouseId-${Environment}:*'
 
+  ChainOptDeleteProductRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'ChainOptDeleteProductRole-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: 'ChainOptDeleteProductPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:DeleteItem'
+                  - 'dynamodb:GetItem'
+                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ChainOptInventory-${Environment}'
+        - PolicyName: 'ChainOptDeleteProductLogPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/ChainOptDeleteProduct-${Environment}:*'
+
 Outputs:
   ChainOptAddProductRoleArn:
     Value: !GetAtt ChainOptAddProductRole.Arn
@@ -150,3 +182,5 @@ Outputs:
     Value: !GetAtt ChainOptGetAllProductsByWarehouseIdRole.Arn
   ChainOptGetAllProductsByWarehouseIdRoleName:
     Value: !Ref ChainOptGetAllProductsByWarehouseIdRole
+  ChainOptDeleteProductRoleArn:
+    Value: !GetAtt ChainOptDeleteProductRole.Arn

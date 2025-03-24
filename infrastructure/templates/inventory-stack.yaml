@@ -65,6 +65,20 @@ Resources:
         Variables:
           INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
 
+  DeleteProductLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "ChainOptDeleteProduct-${Environment}"
+      Handler: deleteProduct.handler
+      Runtime: nodejs22.x
+      Timeout: 10
+      MemorySize: 256
+      Role: arn:aws:iam::891376911200:role/ChainOptDeleteProductRole-dev
+      CodeUri: ../build/deleteProduct.zip
+      Environment:
+        Variables:
+          INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
+
 Outputs:
   AddProductLambdaArn:
     Description: ARN of the AddProduct Lambda function
@@ -86,5 +100,10 @@ Outputs:
     Value: !GetAtt GetAllProductsByWarehouseIdLambda.Arn
     Export:
       Name: !Sub "ChainOptGetAllProductsByWarehouseIdLambdaArn-${Environment}"
+  DeleteProductLambdaArn:
+    Description: ARN of the DeleteProduct Lambda function
+    Value: !GetAtt DeleteProductLambda.Arn
+    Export:
+      Name: !Sub "ChainOptDeleteProductLambdaArn-${Environment}"
 
 

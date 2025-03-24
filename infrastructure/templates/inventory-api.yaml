@@ -150,7 +150,7 @@ Resources:
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId: !Ref InventoryProductsResource
-      PathPart: "{id}"
+      PathPart: "{productId}"
       RestApiId: !Ref ChainOptInventoryApi
 
 # GET /inventory/products/{id} Method
@@ -176,6 +176,29 @@ Resources:
       MethodResponses:
         - StatusCode: 200
 
+# DELETE /inventory/products/{id} Method
+  InventoryProductMethodDelete:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: DELETE
+      ResourceId: !Ref InventoryProductResource
+      RestApiId: !Ref ChainOptInventoryApi
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "ChainOptDeleteProductLambdaArn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 204
+
 # OPTIONS /inventory/products/{id} Method for CORS support (preflight request) // This needs to be changed when adding more methods.
   InventoryProductMethodOPTIONS:
     Type: AWS::ApiGateway::Method
@@ -194,7 +217,7 @@ Resources:
             ResponseParameters:
               method.response.header.Access-Control-Allow-Origin: "'*'"
               method.response.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
-              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET,DELETE'"
             ResponseTemplates:
               application/json: ""
       MethodResponses:
@@ -310,6 +333,15 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
 
+# DeleteProduct Lambda Permission
+  DeleteProductLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "ChainOptDeleteProductLambdaArn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
 # GetAllProductsByWarehouseId Lambda Permission
   GetAllProductsByWarehouseIdLambdaPermission:
     Type: AWS::Lambda::Permission
@@ -318,6 +350,8 @@ Resources:
         Fn::Sub: "ChainOptGetAllProductsByWarehouseIdLambdaArn-${Environment}"
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
+
+
 
 Outputs:
   InventoryApiUrl:

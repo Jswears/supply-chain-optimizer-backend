@@ -53,4 +53,4 @@ deploy_all() {
 
 }
 
-deploy_iam_roles
+deploy_api
