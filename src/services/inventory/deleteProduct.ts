@@ -55,6 +55,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   } catch (error) {
     logger.log('error', 'Error deleting product', {
       error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
       correlationId,
     });
     return errorResponse(error instanceof Error ? error : new Error(String(error)));
