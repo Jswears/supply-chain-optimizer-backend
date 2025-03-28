@@ -4,7 +4,6 @@ import { errorResponse, successResponse } from '../../utils/response';
 import { productSchema, validateInput } from '../../utils/validators/inventoryValidation';
 import { dynamoDb, INVENTORY_TABLE_NAME } from '../../utils/dynamodb';
 import { correlationId, StructuredLogger } from '../../utils/logger';
-
 export const handler: APIGatewayProxyHandler = async (event) => {
   const logger = new StructuredLogger({
     correlationId,
