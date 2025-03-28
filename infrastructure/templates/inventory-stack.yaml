@@ -1,17 +1,24 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Inventory stack with AddProduct Lambda function
-
+Description: Inventory stack with Lambda functions for ChainOpt inventory management
 Parameters:
   Environment:
     Type: String
     Description: 'Deployment environment (dev, staging, prod).'
     AllowedValues: [dev, staging, prod]
     Default: dev
+  LambdaCodeBucket:
+    Type: String
+    Description: 'S3 bucket for Lambda code'
+    Default: ''
+  LambdaCodePrefix:
+    Type: String
+    Description: 'S3 prefix for Lambda code'
+    Default: 'lambdas/'
 
 Resources:
   AddProductLambda:
-    Type: AWS::Serverless::Function
+    Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub "ChainOptAddProduct-${Environment}"
       Handler: addProduct.handler
@@ -19,12 +26,14 @@ Resources:
       Timeout: 10
       MemorySize: 256
       Role: arn:aws:iam::891376911200:role/ChainOptAddProductRole-dev
-      CodeUri: ../build/addProduct.zip
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Sub "${LambdaCodePrefix}addProduct.zip"
       Environment:
         Variables:
           INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
   GetAllProductsLambda:
-    Type: AWS::Serverless::Function
+    Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub "ChainOptGetAllProducts-${Environment}"
       Handler: getAllProducts.handler
@@ -32,13 +41,15 @@ Resources:
       Timeout: 10
       MemorySize: 256
       Role: arn:aws:iam::891376911200:role/ChainOptGetAllProductsRole-dev
-      CodeUri: ../build/getAllProducts.zip
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Sub "${LambdaCodePrefix}getAllProducts.zip"
       Environment:
         Variables:
           INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
 
   GetProductLambda:
-    Type: AWS::Serverless::Function
+    Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub "ChainOptGetProduct-${Environment}"
       Handler: getProduct.handler
@@ -46,13 +57,15 @@ Resources:
       Timeout: 10
       MemorySize: 256
       Role: arn:aws:iam::891376911200:role/ChainOptGetProductRole-dev
-      CodeUri: ../build/getProduct.zip
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Sub "${LambdaCodePrefix}getProduct.zip"
       Environment:
         Variables:
           INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
 
   GetAllProductsByWarehouseIdLambda:
-    Type: AWS::Serverless::Function
+    Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub "ChainOptGetAllProductsByWarehouseId-${Environment}"
       Handler: getAllProductsByWarehouseId.handler
@@ -60,13 +73,15 @@ Resources:
       Timeout: 10
       MemorySize: 256
       Role: arn:aws:iam::891376911200:role/ChainOptGetAllProductsByWarehouseIdRole-dev
-      CodeUri: ../build/getAllProductsByWarehouseId.zip
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Sub "${LambdaCodePrefix}getAllProductsByWarehouseId.zip"
       Environment:
         Variables:
           INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
 
   DeleteProductLambda:
-    Type: AWS::Serverless::Function
+    Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub "ChainOptDeleteProduct-${Environment}"
       Handler: deleteProduct.handler
@@ -74,13 +89,15 @@ Resources:
       Timeout: 10
       MemorySize: 256
       Role: arn:aws:iam::891376911200:role/ChainOptDeleteProductRole-dev
-      CodeUri: ../build/deleteProduct.zip
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Sub "${LambdaCodePrefix}deleteProduct.zip"
       Environment:
         Variables:
           INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
 
   UpdateProductLambda:
-    Type: AWS::Serverless::Function
+    Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub "ChainOptUpdateProduct-${Environment}"
       Handler: updateProduct.handler
@@ -88,7 +105,9 @@ Resources:
       Timeout: 10
       MemorySize: 256
       Role: arn:aws:iam::891376911200:role/ChainOptUpdateProductRole-dev
-      CodeUri: ../build/updateProduct.zip
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Sub "${LambdaCodePrefix}updateProduct.zip"
       Environment:
         Variables:
           INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
