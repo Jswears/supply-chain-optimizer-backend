@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template to deploy RDS PostgreSQL (Free Tier) for ChainOpt orders DB
+
+Parameters:
+  Environment:
+    Type: String
+    Description: 'Deployment environment (dev, staging, prod).'
+    AllowedValues: [dev, staging, prod]
+    Default: dev
+
+  SecretArn:
+    Type: String
+    Description: 'ARN of the secret for RDS credentials'
+    Default: ''
+
+Resources:
+  ChainoptRDSInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: chainopt-orders-db
+      AllocatedStorage: 20
+      DBInstanceClass: db.t3.micro
+      Engine: postgres
+      EngineVersion: 17.2
+      MasterUsername: !Sub '{{resolve:secretsmanager:${SecretArn}:SecretString:username}}'
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${SecretArn}:SecretString:password}}'
+      DBName: orders
+      VPCSecurityGroups:
+        - !ImportValue chainopt-rds-sg
+      DBSubnetGroupName: !Ref RDSSubnetGroup
+      PubliclyAccessible: false
+      BackupRetentionPeriod: 7
+      MultiAZ: false
+      DeletionProtection: false
+      StorageType: gp2
+
+  RDSSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnet group for ChainOpt RDS instance
+      SubnetIds:
+        Fn::Split:
+          - ","
+          - Fn::ImportValue: project-chainopt-private-subnets
+
+Outputs:
+  RDSInstanceEndpoint:
+    Description: The endpoint of the created RDS instance
+    Value: !GetAtt ChainoptRDSInstance.Endpoint.Address
+    Export:
+      Name: chainopt-rds-endpoint
+
+  RDSInstanceIdentifier:
+    Description: The RDS instance identifier
+    Value: !Ref ChainoptRDSInstance
+    Export:
+      Name: chainopt-rds-identifier
