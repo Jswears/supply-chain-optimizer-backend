@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: API Gateway for Inventory Service with POST /inventory/products integrated with AddProduct Lambda.
+Description: API Gateway for ChainOpt application with unified endpoints for inventory and orders.
 
 Parameters:
   Environment:
@@ -9,34 +9,40 @@ Parameters:
     Default: dev
 
 Resources:
-######################################################
-# 1) API Gateway & Deployment Resources // TODO:Needs to implement versioning once the API is stable.
-######################################################
-  ChainOptInventoryApi:
+  ChainOptApi:
     Type: AWS::ApiGateway::RestApi
     Properties:
-      Name: !Sub "ChainOptInventoryApi-${Environment}"
-      Description: "API Gateway for Inventory Service"
+      Name: !Sub "ChainOpt-API-${Environment}"
+      Description: "Unified API for ChainOpt Supply Chain Optimization"
       EndpointConfiguration:
         Types:
           - REGIONAL
 
-  ChainOptInventoryApiDeployment:
+  ChainOptApiDeployment:
     Type: AWS::ApiGateway::Deployment
-    DependsOn: [InventoryProductsMethodGET, InventoryProductsMethodPOST, InventoryProductMethodGET, InventoryProductsByWarehouseIdMethodGET, InventoryProductMethodDelete, InventoryProductMethodPUT]
+    DependsOn:
+      - ProductsMethodGET
+      - ProductsMethodPOST
+      - ProductMethodGET
+      - ProductMethodDelete
+      - ProductMethodPUT
+      - WarehouseProductsMethodGET
+      - TransferMethodPOST
+      - OrdersMethodGET
+      - OrdersMethodPOST
     Properties:
-      RestApiId: !Ref ChainOptInventoryApi
-      Description: "Deployment for Inventory API"
+      RestApiId: !Ref ChainOptApi
+      Description: "Deployment for ChainOpt API"
 
-  ChainOptInventoryApiStage:
+  ChainOptApiStage:
     Type: AWS::ApiGateway::Stage
     Properties:
       StageName: !Ref Environment
-      DeploymentId: !Ref ChainOptInventoryApiDeployment
-      RestApiId: !Ref ChainOptInventoryApi
-      Description: "Inventory API Stage"
+      DeploymentId: !Ref ChainOptApiDeployment
+      RestApiId: !Ref ChainOptApi
+      Description: "ChainOpt API Stage"
       AccessLogSetting:
-        DestinationArn: !GetAtt ChainOptInventoryApiLogGroup.Arn
+        DestinationArn: !GetAtt ChainOptApiLogGroup.Arn
         Format: "$context.identity.sourceIp - $context.requestId [$context.requestTime] $context.httpMethod $context.resourcePath $context.status"
       MethodSettings:
         - ResourcePath: "/*"
@@ -44,36 +50,29 @@ Resources:
           ThrottlingBurstLimit: 100
           ThrottlingRateLimit: 50
 
-  ChainOptInventoryApiLogGroup:
+  ChainOptApiLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/apigateway/chainopt-api-${Environment}"
       RetentionInDays: 30
 
 ######################################################
-# 2) /inventory/products Resource
+# 1) /products Resource
 ######################################################
-  InventoryRootResource:
+  ProductsResource:
     Type: AWS::ApiGateway::Resource
     Properties:
-      ParentId: !GetAtt ChainOptInventoryApi.RootResourceId
-      PathPart: inventory
-      RestApiId: !Ref ChainOptInventoryApi
-
-  InventoryProductsResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !Ref InventoryRootResource
+      ParentId: !GetAtt ChainOptApi.RootResourceId
       PathPart: products
-      RestApiId: !Ref ChainOptInventoryApi
+      RestApiId: !Ref ChainOptApi
 
-# GET /inventory/products Method
-  InventoryProductsMethodGET:
+# GET /products Method
+  ProductsMethodGET:
     Type: AWS::ApiGateway::Method
     Properties:
       HttpMethod: GET
-      ResourceId: !Ref InventoryProductsResource
-      RestApiId: !Ref ChainOptInventoryApi
+      ResourceId: !Ref ProductsResource
+      RestApiId: !Ref ChainOptApi
       AuthorizationType: NONE
       Integration:
         Type: AWS_PROXY
@@ -90,13 +89,13 @@ Resources:
       MethodResponses:
         - StatusCode: 200
 
-# POST /inventory/products Method
-  InventoryProductsMethodPOST:
+# POST /products Method
+  ProductsMethodPOST:
     Type: AWS::ApiGateway::Method
     Properties:
       HttpMethod: POST
-      ResourceId: !Ref InventoryProductsResource
-      RestApiId: !Ref ChainOptInventoryApi
+      ResourceId: !Ref ProductsResource
+      RestApiId: !Ref ChainOptApi
       AuthorizationType: NONE
       Integration:
         Type: AWS_PROXY
@@ -113,13 +112,13 @@ Resources:
       MethodResponses:
         - StatusCode: 201
 
-# OPTIONS /inventory/products Method for CORS support (preflight request) // This needs to be changed when adding more methods.
-  InventoryProductsMethodOPTIONS:
+# OPTIONS /products Method for CORS support
+  ProductsMethodOPTIONS:
     Type: AWS::ApiGateway::Method
     Properties:
       HttpMethod: OPTIONS
-      ResourceId: !Ref InventoryProductsResource
-      RestApiId: !Ref ChainOptInventoryApi
+      ResourceId: !Ref ProductsResource
+      RestApiId: !Ref ChainOptApi
       AuthorizationType: NONE
       Integration:
         Type: MOCK
@@ -141,25 +140,23 @@ Resources:
             method.response.header.Access-Control-Allow-Headers: true
             method.response.header.Access-Control-Allow-Methods: true
 
-
-
 ######################################################
-# 3) /inventory/products/{productId} Resource
+# 2) /products/{productId} Resource
 ######################################################
-  InventoryProductResource:
+  ProductResource:
     Type: AWS::ApiGateway::Resource
     Properties:
-      ParentId: !Ref InventoryProductsResource
+      ParentId: !Ref ProductsResource
       PathPart: "{productId}"
-      RestApiId: !Ref ChainOptInventoryApi
+      RestApiId: !Ref ChainOptApi
 
-# GET /inventory/products/{productId} Method
-  InventoryProductMethodGET:
+# GET /products/{productId} Method
+  ProductMethodGET:
     Type: AWS::ApiGateway::Method
     Properties:
       HttpMethod: GET
-      ResourceId: !Ref InventoryProductResource
-      RestApiId: !Ref ChainOptInventoryApi
+      ResourceId: !Ref ProductResource
+      RestApiId: !Ref ChainOptApi
       AuthorizationType: NONE
       Integration:
         Type: AWS_PROXY
@@ -176,13 +173,13 @@ Resources:
       MethodResponses:
         - StatusCode: 200
 
-# DELETE /inventory/products/{id} Method
-  InventoryProductMethodDelete:
+# DELETE /products/{productId} Method
+  ProductMethodDelete:
     Type: AWS::ApiGateway::Method
     Properties:
       HttpMethod: DELETE
-      ResourceId: !Ref InventoryProductResource
-      RestApiId: !Ref ChainOptInventoryApi
+      ResourceId: !Ref ProductResource
+      RestApiId: !Ref ChainOptApi
       AuthorizationType: NONE
       Integration:
         Type: AWS_PROXY
@@ -199,13 +196,13 @@ Resources:
       MethodResponses:
         - StatusCode: 204
 
-# PUT /inventory/products/{productId}
-  InventoryProductMethodPUT:
+# PUT /products/{productId}
+  ProductMethodPUT:
     Type: AWS::ApiGateway::Method
     Properties:
       HttpMethod: PUT
-      ResourceId: !Ref InventoryProductResource
-      RestApiId: !Ref ChainOptInventoryApi
+      ResourceId: !Ref ProductResource
+      RestApiId: !Ref ChainOptApi
       AuthorizationType: NONE
       Integration:
         Type: AWS_PROXY
@@ -222,13 +219,13 @@ Resources:
       MethodResponses:
         - StatusCode: 200
 
-# OPTIONS /inventory/products/{productId} Method for CORS support (preflight request) // This needs to be changed when adding more methods.
-  InventoryProductMethodOPTIONS:
+# OPTIONS /products/{productId} Method for CORS support
+  ProductMethodOPTIONS:
     Type: AWS::ApiGateway::Method
     Properties:
       HttpMethod: OPTIONS
-      ResourceId: !Ref InventoryProductResource
-      RestApiId: !Ref ChainOptInventoryApi
+      ResourceId: !Ref ProductResource
+      RestApiId: !Ref ChainOptApi
       AuthorizationType: NONE
       Integration:
         Type: MOCK
@@ -251,36 +248,36 @@ Resources:
             method.response.header.Access-Control-Allow-Methods: true
 
 ######################################################
-# 4) /warehouse/{warehouseId}/products Resource
+# 3) /warehouses/{warehouseId}/products Resource
 ######################################################
-  WarehouseResource:
+  WarehousesResource:
     Type: AWS::ApiGateway::Resource
     Properties:
-      ParentId: !GetAtt ChainOptInventoryApi.RootResourceId
-      PathPart: warehouse
-      RestApiId: !Ref ChainOptInventoryApi
+      ParentId: !GetAtt ChainOptApi.RootResourceId
+      PathPart: warehouses
+      RestApiId: !Ref ChainOptApi
 
   WarehouseIdResource:
     Type: AWS::ApiGateway::Resource
     Properties:
-      ParentId: !Ref WarehouseResource
+      ParentId: !Ref WarehousesResource
       PathPart: "{warehouseId}"
-      RestApiId: !Ref ChainOptInventoryApi
+      RestApiId: !Ref ChainOptApi
 
-  InventoryProductsByWarehouseIdResource:
+  WarehouseProductsResource:
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId: !Ref WarehouseIdResource
       PathPart: products
-      RestApiId: !Ref ChainOptInventoryApi
+      RestApiId: !Ref ChainOptApi
 
-# GET /warehouse/{warehouseId}/products Method
-  InventoryProductsByWarehouseIdMethodGET:
+# GET /warehouses/{warehouseId}/products Method
+  WarehouseProductsMethodGET:
     Type: AWS::ApiGateway::Method
     Properties:
       HttpMethod: GET
-      ResourceId: !Ref InventoryProductsByWarehouseIdResource
-      RestApiId: !Ref ChainOptInventoryApi
+      ResourceId: !Ref WarehouseProductsResource
+      RestApiId: !Ref ChainOptApi
       AuthorizationType: NONE
       Integration:
         Type: AWS_PROXY
@@ -297,13 +294,13 @@ Resources:
       MethodResponses:
         - StatusCode: 200
 
-# OPTIONS /warehouse/{warehouseId}/products Method for CORS support (preflight request) // This needs to be changed when adding more methods.
-  InventoryProductsByWarehouseIdMethodOPTIONS:
+# OPTIONS /warehouses/{warehouseId}/products Method for CORS support
+  WarehouseProductsMethodOPTIONS:
     Type: AWS::ApiGateway::Method
     Properties:
       HttpMethod: OPTIONS
-      ResourceId: !Ref InventoryProductsByWarehouseIdResource
-      RestApiId: !Ref ChainOptInventoryApi
+      ResourceId: !Ref WarehouseProductsResource
+      RestApiId: !Ref ChainOptApi
       AuthorizationType: NONE
       Integration:
         Type: MOCK
@@ -325,9 +322,153 @@ Resources:
             method.response.header.Access-Control-Allow-Headers: true
             method.response.header.Access-Control-Allow-Methods: true
 
+######################################################
+# 4) /transfers Resource (for product transfers)
+######################################################
+  TransfersResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt ChainOptApi.RootResourceId
+      PathPart: transfers
+      RestApiId: !Ref ChainOptApi
+
+# POST /transfers Method
+  TransferMethodPOST:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: POST
+      ResourceId: !Ref TransfersResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-inventory-transfer-product-lambda-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 200
+
+# OPTIONS /transfers Method for CORS support
+  TransferMethodOPTIONS:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: OPTIONS
+      ResourceId: !Ref TransfersResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        PassthroughBehavior: NEVER
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,POST'"
+            ResponseTemplates:
+              application/json: ""
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
 
 ######################################################
-# Lambda Permissions
+# 5) /orders Resource
+######################################################
+  OrdersResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt ChainOptApi.RootResourceId
+      PathPart: orders
+      RestApiId: !Ref ChainOptApi
+
+# GET /orders Method
+  OrdersMethodGET:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: GET
+      ResourceId: !Ref OrdersResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-orders-get-orders-function-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 200
+
+# POST /orders Method
+  OrdersMethodPOST:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: POST
+      ResourceId: !Ref OrdersResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-orders-create-order-function-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 201
+
+# OPTIONS /orders Method for CORS support
+  OrdersMethodOPTIONS:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: OPTIONS
+      ResourceId: !Ref OrdersResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        PassthroughBehavior: NEVER
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET,POST'"
+            ResponseTemplates:
+              application/json: ""
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+
+######################################################
+# Lambda Permissions for Inventory Functions
 ######################################################
 # AddProduct Lambda Permission
   AddProductLambdaPermission:
@@ -337,6 +478,7 @@ Resources:
         Fn::Sub: "chainopt-inventory-add-product-lambda-arn-${Environment}"
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
 
 # GetProducts Lambda Permission
   GetAllProductsLambdaPermission:
@@ -346,6 +488,7 @@ Resources:
         Fn::Sub: "chainopt-inventory-get-all-products-lambda-arn-${Environment}"
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
 
 # GetProduct Lambda Permission
   GetProductLambdaPermission:
@@ -355,6 +498,7 @@ Resources:
         Fn::Sub: "chainopt-inventory-get-product-lambda-arn-${Environment}"
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
 
 # DeleteProduct Lambda Permission
   DeleteProductLambdaPermission:
@@ -364,6 +508,7 @@ Resources:
         Fn::Sub: "chainopt-inventory-delete-product-lambda-arn-${Environment}"
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
 
 # GetAllProductsByWarehouseId Lambda Permission
   GetAllProductsByWarehouseIdLambdaPermission:
@@ -373,6 +518,7 @@ Resources:
         Fn::Sub: "chainopt-inventory-get-all-products-by-warehouse-id-lambda-arn-${Environment}"
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
 
 # UpdateProduct Lambda Permission
   UpdateProductLambdaPermission:
@@ -382,6 +528,7 @@ Resources:
         Fn::Sub: "chainopt-inventory-update-product-lambda-arn-${Environment}"
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
 
 # TransferProduct Lambda Permission
   TransferProductLambdaPermission:
@@ -391,10 +538,34 @@ Resources:
         Fn::Sub: "chainopt-inventory-transfer-product-lambda-arn-${Environment}"
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
+
+######################################################
+# Lambda Permissions for Orders Functions
+######################################################
+# CreateOrder Lambda Permission
+  CreateOrderLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "chainopt-orders-create-order-function-arn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
+
+# GetOrders Lambda Permission
+  GetOrdersLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "chainopt-orders-get-orders-function-arn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
 
 Outputs:
-  InventoryApiUrl:
-    Description: "Inventory API URL"
-    Value: !Sub "https://${ChainOptInventoryApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
+  ChainOptApiUrl:
+    Description: "ChainOpt API URL"
+    Value: !Sub "https://${ChainOptApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
     Export:
-      Name: !Sub "ChainOptInventoryApiUrl-${Environment}"
+      Name: !Sub "ChainOptApiUrl-${Environment}"
