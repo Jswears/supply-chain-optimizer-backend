@@ -81,7 +81,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     return successResponse({
       message: 'Product updated successfully',
-      product_id: productId,
+      data: {
+        product_id: productId,
+        updated_fields: Object.keys(updateData),
+      },
     });
   } catch (error) {
     logger.log('error', 'Error updating product', {

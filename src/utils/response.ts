@@ -10,7 +10,10 @@ export const formatResponse = <T>(statusCode: number, body: ResponseBody<T>) => 
   return {
     statusCode,
     headers: defaultHeaders,
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      ...body,
+      timestamp: body.timestamp || new Date().toISOString(),
+    }),
   };
 };
 

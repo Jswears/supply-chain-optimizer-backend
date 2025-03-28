@@ -37,7 +37,11 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       return errorResponse(new Error('Product not found'), 404);
     }
 
-    logger.log('info', 'Product found', { productId, warehouseId, correlationId });
+    logger.log('info', 'Product found, proceeding with deletion', {
+      productId,
+      warehouseId,
+      correlationId,
+    });
     await dynamoDb.delete({
       TableName: INVENTORY_TABLE_NAME,
       Key: {
@@ -50,7 +54,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     return successResponse({
       message: 'Product deleted successfully',
-      product_id: productId,
+      data: { product_id: productId },
     });
   } catch (error) {
     logger.log('error', 'Error deleting product', {

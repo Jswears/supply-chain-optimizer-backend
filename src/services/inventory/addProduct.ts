@@ -26,10 +26,6 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     const data = JSON.parse(event.body);
     const product = validateInput(productSchema, data);
-    if (product.error) {
-      logger.log('error', 'Validation error', { error: product.error, correlationId });
-      return errorResponse(product.error, 400);
-    }
 
     const productItem = {
       ...product,
@@ -43,10 +39,17 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       Item: productItem,
     });
 
+    // Return a simplified response with only the requested fields
+    const responseData = {
+      product_id: productItem.product_id,
+      name: productItem.product_name,
+      stock_level: productItem.stock_level,
+    };
+
     logger.log('info', 'Product added successfully', { product: productItem, correlationId });
     return successResponse({
       message: 'Product added successfully',
-      product: productItem,
+      data: responseData,
     });
   } catch (error) {
     logger.log('error', 'Error adding product', {
