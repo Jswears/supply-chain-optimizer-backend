@@ -28,7 +28,7 @@ Resources:
       Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-add-product-role"
       Code:
         S3Bucket: !Ref LambdaCodeBucket
-        S3Key: !Sub "${LambdaCodePrefix}addProduct.zip"
+        S3Key: !Sub "${LambdaCodePrefix}/addProduct.zip"
       Environment:
         Variables:
           INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
@@ -43,7 +43,7 @@ Resources:
       Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-get-all-products-role"
       Code:
         S3Bucket: !Ref LambdaCodeBucket
-        S3Key: !Sub "${LambdaCodePrefix}getAllProducts.zip"
+        S3Key: !Sub "${LambdaCodePrefix}/getAllProducts.zip"
       Environment:
         Variables:
           INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
@@ -59,7 +59,7 @@ Resources:
       Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-get-product-role"
       Code:
         S3Bucket: !Ref LambdaCodeBucket
-        S3Key: !Sub "${LambdaCodePrefix}getProduct.zip"
+        S3Key: !Sub "${LambdaCodePrefix}/getProduct.zip"
       Environment:
         Variables:
           INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
@@ -75,7 +75,7 @@ Resources:
       Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-get-all-products-by-warehouse-id-role"
       Code:
         S3Bucket: !Ref LambdaCodeBucket
-        S3Key: !Sub "${LambdaCodePrefix}getAllProductsByWarehouseId.zip"
+        S3Key: !Sub "${LambdaCodePrefix}/getAllProductsByWarehouseId.zip"
       Environment:
         Variables:
           INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
@@ -91,7 +91,7 @@ Resources:
       Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-delete-product-role"
       Code:
         S3Bucket: !Ref LambdaCodeBucket
-        S3Key: !Sub "${LambdaCodePrefix}deleteProduct.zip"
+        S3Key: !Sub "${LambdaCodePrefix}/deleteProduct.zip"
       Environment:
         Variables:
           INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
@@ -104,10 +104,26 @@ Resources:
       Runtime: nodejs22.x
       Timeout: 10
       MemorySize: 256
-      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-update-product-role"
+      Role: arn:aws:iam::891376911200:role/ChainOptUpdateProductRole-dev
       Code:
         S3Bucket: !Ref LambdaCodeBucket
-        S3Key: !Sub "${LambdaCodePrefix}updateProduct.zip"
+        S3Key: !Sub "${LambdaCodePrefix}/updateProduct.zip"
+      Environment:
+        Variables:
+          INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
+
+  TransferProductLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "chainopt-inventory-transfer-product-${Environment}"
+      Handler: transferProduct.handler
+      Runtime: nodejs22.x
+      Timeout: 10
+      MemorySize: 256
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-transfer-product-role"
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Sub "${LambdaCodePrefix}/transferProduct.zip"
       Environment:
         Variables:
           INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
@@ -143,5 +159,8 @@ Outputs:
     Value: !GetAtt UpdateProductLambda.Arn
     Export:
       Name: !Sub "chainopt-inventory-update-product-lambda-arn-${Environment}"
-
-
+  TransferProductLambdaArn:
+    Description: ARN of the TransferProduct Lambda function
+    Value: !GetAtt TransferProductLambda.Arn
+    Export:
+      Name: !Sub "chainopt-inventory-transfer-product-lambda-arn-${Environment}"

@@ -38,7 +38,7 @@ Resources:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
-                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/ChainOptAddProduct-${Environment}:*'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-inventory-add-product-${Environment}:*'
 
   ChainOptGetAllProductsLambdaRole:
     Type: 'AWS::IAM::Role'
@@ -69,7 +69,7 @@ Resources:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
-                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/ChainOptGetAllProducts-${Environment}:*'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-inventory-get-all-products-${Environment}:*'
 
   ChainOptGetProductLambdaRole:
     Type: 'AWS::IAM::Role'
@@ -100,7 +100,7 @@ Resources:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
-                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/ChainOptGetProduct-${Environment}:*'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-inventory-get-product-${Environment}:*'
 
   ChainOptGetAllProductsByWarehouseIdLambdaRole:
     Type: 'AWS::IAM::Role'
@@ -131,7 +131,7 @@ Resources:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
-                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/ChainOptGetAllProductsByWarehouseId-${Environment}:*'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-inventory-get-all-products-by-warehouse-id-${Environment}:*'
 
   ChainOptDeleteProductLambdaRole:
     Type: 'AWS::IAM::Role'
@@ -163,7 +163,7 @@ Resources:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
-                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/ChainOptDeleteProduct-${Environment}:*'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-inventory-delete-product-${Environment}:*'
 
   ChainOptUpdateProductLambdaRole:
     Type: 'AWS::IAM::Role'
@@ -195,7 +195,40 @@ Resources:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
-                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/ChainOptUpdateProduct-${Environment}:*'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-inventory-update-product-${Environment}:*'
+
+  ChainOptTransferProductLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'chainopt-${Environment}-transfer-product-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'chainopt-${Environment}-transfer-product-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:GetItem'
+                  - 'dynamodb:PutItem'
+                  - 'dynamodb:UpdateItem'
+                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ChainOptInventory-${Environment}'
+        - PolicyName: !Sub 'chainopt-${Environment}-transfer-product-log-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-inventory-transfer-product-${Environment}:*'
 
 # Orders
   ChainOptInitializeDBLambdaRole:
@@ -248,7 +281,7 @@ Resources:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
-                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/ChainOptInitializeDB-${Environment}:*'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-orders-initialize-db-${Environment}:*'
 
   ChainOptUpdateSecretLambdaRole:
     Type: 'AWS::IAM::Role'
@@ -291,7 +324,7 @@ Resources:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
-                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/ChainOptUpdateSecret-${Environment}:*'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-orders-update-secret-${Environment}:*'
 
   ChainOptCreateOrderLambdaRole:
     Type: 'AWS::IAM::Role'
@@ -340,7 +373,7 @@ Resources:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
-                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/ChainOptCreateOrder-${Environment}:*'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-orders-create-order-${Environment}:*'
 
   ChainOptGetOrdersLambdaRole:
     Type: 'AWS::IAM::Role'
@@ -381,7 +414,7 @@ Resources:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
-                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/ChainOptGetOrders-${Environment}:*'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-orders-get-orders-${Environment}:*'
 
 Outputs:
   ChainOptAddProductLambdaRoleArn:
@@ -408,6 +441,10 @@ Outputs:
     Value: !GetAtt ChainOptUpdateProductLambdaRole.Arn
     Export:
       Name: !Sub 'chainopt-${Environment}-update-product-role-arn'
+  ChainOptTransferProductLambdaRoleArn:
+    Value: !GetAtt ChainOptTransferProductLambdaRole.Arn
+    Export:
+      Name: !Sub 'chainopt-${Environment}-transfer-product-role-arn'
   ChainOptInitializeDBLambdaRoleArn:
     Value: !GetAtt ChainOptInitializeDBLambdaRole.Arn
     Export:

@@ -15,10 +15,20 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   try {
     const warehouseId = event.pathParameters?.warehouseId;
     logger.log('info', 'warehouseId', { warehouseId, correlationId });
+
     if (!warehouseId) {
       logger.log('error', 'Warehouse ID is required', { correlationId });
       return errorResponse(new Error('Warehouse ID is required'), 400);
     }
+
+    const queryParams = event.queryStringParameters || {};
+    const limit = queryParams.limit ? parseInt(queryParams.limit, 10) : 100;
+    const lastEvaluatedKey = queryParams.offset ? JSON.parse(queryParams.offset) : undefined;
+
+    if (limit <= 0 || limit > 1000) {
+      return errorResponse(new Error('Limit must be between 1 and 1000'), 400);
+    }
+
     const result = await dynamoDb.query({
       TableName: INVENTORY_TABLE_NAME,
       IndexName: 'GSI-Warehouse',
@@ -30,15 +40,30 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         ':warehouse_id': warehouseId,
       },
       ProjectionExpression: 'product_id, product_name, stock_level',
+      Limit: limit,
+      ExclusiveStartKey: lastEvaluatedKey,
     });
 
-    if (!result.Items) {
-      logger.log('info', 'No products found', { correlationId });
-      return errorResponse(new Error('No products found'), 404);
+    if (!result.Items || result.Items.length === 0) {
+      logger.log('info', 'No products found in warehouse', { warehouseId, correlationId });
+      return successResponse({
+        message: 'No products found in this warehouse',
+        data: [],
+        pagination: null,
+      });
     }
 
+    // Format pagination info
+    const pagination = result.LastEvaluatedKey
+      ? { next_offset: JSON.stringify(result.LastEvaluatedKey) }
+      : null;
+
     logger.log('info', 'Products found', { count: result.Items.length, correlationId });
-    return successResponse(result.Items || []);
+    return successResponse({
+      message: 'Products retrieved successfully',
+      data: result.Items,
+      pagination,
+    });
   } catch (error) {
     logger.log('error', 'Error retrieving products', {
       error: error instanceof Error ? error.message : String(error),
