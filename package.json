@@ -27,19 +27,12 @@
     "@commitlint/cli": "^19.8.0",
     "@commitlint/config-conventional": "^19.8.0",
     "@eslint/js": "^9.22.0",
-    "@types/aws-lambda": "^8.10.147",
-    "@types/glob": "^8.1.0",
-    "@types/pg": "^8.11.11",
-    "esbuild": "^0.25.1",
-    "esbuild-plugin-tsc": "^0.5.0",
     "eslint": "^9.22.0",
     "eslint-plugin-prettier": "^5.2.3",
     "globals": "^16.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.0",
     "prettier": "^3.5.3",
-    "ts-node": "^10.9.2",
-    "tsx": "^4.19.3",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.27.0"
   },
@@ -51,18 +44,5 @@
   },
   "engines": {
     "node": ">=22.0.0"
-  },
-  "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.767.0",
-    "@aws-sdk/client-secrets-manager": "^3.775.0",
-    "@aws-sdk/lib-dynamodb": "^3.767.0",
-    "@types/archiver": "^6.0.3",
-    "archiver": "^7.0.1",
-    "glob": "^11.0.1",
-    "joi": "^17.13.3",
-    "nanoid": "^5.1.5",
-    "pg": "^8.14.1",
-    "winston": "^3.17.0",
-    "winston-cloudwatch": "^6.3.0"
   }
 }
