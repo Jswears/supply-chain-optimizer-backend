@@ -20,7 +20,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     if (!productId || !warehouseId) {
       logger.log('error', 'Product ID and Warehouse ID are required', { correlationId });
-      return errorResponse(new Error('Product ID is required'), 400);
+      return errorResponse(new Error('Product ID and Warehouse ID are required'), 400);
     }
 
     const result = await dynamoDb.get({

@@ -15,7 +15,7 @@ Resources:
   ChainOptInventoryApi:
     Type: AWS::ApiGateway::RestApi
     Properties:
-      Name: "ChainOptInventoryApi"
+      Name: !Sub "ChainOptInventoryApi-${Environment}"
       Description: "API Gateway for Inventory Service"
       EndpointConfiguration:
         Types:
@@ -85,7 +85,7 @@ Resources:
               - !Ref AWS::Region
               - ":lambda:path/2015-03-31/functions/"
               - !ImportValue
-                Fn::Sub: "ChainOptGetAllProductsLambdaArn-${Environment}"
+                Fn::Sub: "chainopt-inventory-get-all-products-lambda-arn-${Environment}"
               - "/invocations"
       MethodResponses:
         - StatusCode: 200
@@ -108,7 +108,7 @@ Resources:
               - !Ref AWS::Region
               - ":lambda:path/2015-03-31/functions/"
               - !ImportValue
-                Fn::Sub: "ChainOptAddProductLambdaArn-${Environment}"
+                Fn::Sub: "chainopt-inventory-add-product-lambda-arn-${Environment}"
               - "/invocations"
       MethodResponses:
         - StatusCode: 201
@@ -171,7 +171,7 @@ Resources:
               - !Ref AWS::Region
               - ":lambda:path/2015-03-31/functions/"
               - !ImportValue
-                Fn::Sub: "ChainOptGetProductLambdaArn-${Environment}"
+                Fn::Sub: "chainopt-inventory-get-product-lambda-arn-${Environment}"
               - "/invocations"
       MethodResponses:
         - StatusCode: 200
@@ -194,7 +194,7 @@ Resources:
               - !Ref AWS::Region
               - ":lambda:path/2015-03-31/functions/"
               - !ImportValue
-                Fn::Sub: "ChainOptDeleteProductLambdaArn-${Environment}"
+                Fn::Sub: "chainopt-inventory-delete-product-lambda-arn-${Environment}"
               - "/invocations"
       MethodResponses:
         - StatusCode: 204
@@ -217,7 +217,7 @@ Resources:
               - !Ref AWS::Region
               - ":lambda:path/2015-03-31/functions/"
               - !ImportValue
-                Fn::Sub: "ChainOptUpdateProductLambdaArn-${Environment}"
+                Fn::Sub: "chainopt-inventory-update-product-lambda-arn-${Environment}"
               - "/invocations"
       MethodResponses:
         - StatusCode: 200
@@ -292,7 +292,7 @@ Resources:
               - !Ref AWS::Region
               - ":lambda:path/2015-03-31/functions/"
               - !ImportValue
-                Fn::Sub: "ChainOptGetAllProductsByWarehouseIdLambdaArn-${Environment}"
+                Fn::Sub: "chainopt-inventory-get-all-products-by-warehouse-id-lambda-arn-${Environment}"
               - "/invocations"
       MethodResponses:
         - StatusCode: 200
@@ -334,7 +334,7 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !ImportValue
-        Fn::Sub: "ChainOptAddProductLambdaArn-${Environment}"
+        Fn::Sub: "chainopt-inventory-add-product-lambda-arn-${Environment}"
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
 
@@ -343,7 +343,7 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !ImportValue
-        Fn::Sub: "ChainOptGetAllProductsLambdaArn-${Environment}"
+        Fn::Sub: "chainopt-inventory-get-all-products-lambda-arn-${Environment}"
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
 
@@ -352,7 +352,7 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !ImportValue
-        Fn::Sub: "ChainOptGetProductLambdaArn-${Environment}"
+        Fn::Sub: "chainopt-inventory-get-product-lambda-arn-${Environment}"
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
 
@@ -361,7 +361,7 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !ImportValue
-        Fn::Sub: "ChainOptDeleteProductLambdaArn-${Environment}"
+        Fn::Sub: "chainopt-inventory-delete-product-lambda-arn-${Environment}"
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
 
@@ -370,7 +370,7 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !ImportValue
-        Fn::Sub: "ChainOptGetAllProductsByWarehouseIdLambdaArn-${Environment}"
+        Fn::Sub: "chainopt-inventory-get-all-products-by-warehouse-id-lambda-arn-${Environment}"
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
 
@@ -379,7 +379,7 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !ImportValue
-        Fn::Sub: "ChainOptUpdateProductLambdaArn-${Environment}"
+        Fn::Sub: "chainopt-inventory-update-product-lambda-arn-${Environment}"
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
 

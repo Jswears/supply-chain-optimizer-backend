@@ -22,13 +22,12 @@ Resources:
   InitializeDBFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "ChainOptInitializeDB-${Environment}"
+      FunctionName: !Sub "chainopt-orders-initialize-db-${Environment}"
       Handler: initializeDB.handler
       Runtime: nodejs22.x
       Timeout: 10
       MemorySize: 256
-      Role: !ImportValue
-        Fn::Sub: ChainOptInitializeDBLambdaRoleArn-${Environment}
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-initialize-db-role"
       Code:
         S3Bucket: !Ref LambdaCodeBucket
         S3Key: !Sub "${LambdaCodePrefix}initializeDB.zip"
@@ -44,13 +43,12 @@ Resources:
   UpdateSecretFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "ChainOptUpdateSecret-${Environment}"
+      FunctionName: !Sub "chainopt-orders-update-secret-${Environment}"
       Handler: updateSecret.handler
       Runtime: nodejs22.x
       Timeout: 10
       MemorySize: 256
-      Role: !ImportValue
-        Fn::Sub: ChainOptUpdateSecretLambdaRoleArn-${Environment}
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-update-secret-role"
       Code:
         S3Bucket: !Ref LambdaCodeBucket
         S3Key: !Sub "${LambdaCodePrefix}updateSecret.zip"
@@ -68,13 +66,12 @@ Resources:
   CreateOrderFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "ChainOptCreateOrder-${Environment}"
+      FunctionName: !Sub "chainopt-orders-create-order-${Environment}"
       Handler: createOrder.handler
       Runtime: nodejs22.x
       Timeout: 10
       MemorySize: 256
-      Role: !ImportValue
-        Fn::Sub: ChainOptCreateOrderLambdaRoleArn-${Environment}
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-create-order-role"
       Code:
         S3Bucket: !Ref LambdaCodeBucket
         S3Key: !Sub "${LambdaCodePrefix}createOrder.zip"
@@ -90,13 +87,12 @@ Resources:
   GetOrdersFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "ChainOptGetOrders-${Environment}"
+      FunctionName: !Sub "chainopt-orders-get-orders-${Environment}"
       Handler: getOrders.handler
       Runtime: nodejs22.x
       Timeout: 10
       MemorySize: 256
-      Role: !ImportValue
-        Fn::Sub: ChainOptGetOrdersLambdaRoleArn-${Environment}
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-get-orders-role"
       Code:
         S3Bucket: !Ref LambdaCodeBucket
         S3Key: !Sub "${LambdaCodePrefix}getOrders.zip"
@@ -113,9 +109,9 @@ Outputs:
   CreateOrderFunctionArn:
     Value: !GetAtt CreateOrderFunction.Arn
     Export:
-      Name: !Sub "ChainOptCreateOrderFunctionArn-${Environment}"
+      Name: !Sub "chainopt-orders-create-order-function-arn-${Environment}"
 
   GetOrdersFunctionArn:
     Value: !GetAtt GetOrdersFunction.Arn
     Export:
-      Name: !Sub "ChainOptGetOrdersFunctionArn-${Environment}"
+      Name: !Sub "chainopt-orders-get-orders-function-arn-${Environment}"

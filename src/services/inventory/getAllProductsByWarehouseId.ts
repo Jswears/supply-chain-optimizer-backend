@@ -16,8 +16,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     const warehouseId = event.pathParameters?.warehouseId;
     logger.log('info', 'warehouseId', { warehouseId, correlationId });
     if (!warehouseId) {
-      logger.log('error', 'warehouseId is required', { correlationId });
-      return errorResponse('warehouseId is required', 400);
+      logger.log('error', 'Warehouse ID is required', { correlationId });
+      return errorResponse(new Error('Warehouse ID is required'), 400);
     }
     const result = await dynamoDb.query({
       TableName: INVENTORY_TABLE_NAME,
@@ -34,7 +34,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     if (!result.Items) {
       logger.log('info', 'No products found', { correlationId });
-      return errorResponse('No products found', 404);
+      return errorResponse(new Error('No products found'), 404);
     }
 
     logger.log('info', 'Products found', { count: result.Items.length, correlationId });

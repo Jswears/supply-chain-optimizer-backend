@@ -19,7 +19,7 @@ export const handler: APIGatewayProxyHandler = async () => {
 
     if (!result.Items) {
       logger.log('info', 'No products found', { correlationId });
-      return errorResponse('No products found', 404);
+      return errorResponse(new Error('No products found'), 404);
     }
 
     logger.log('info', 'Products found', { count: result.Items.length, correlationId });

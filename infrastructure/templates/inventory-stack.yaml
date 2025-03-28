@@ -20,12 +20,12 @@ Resources:
   AddProductLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "ChainOptAddProduct-${Environment}"
+      FunctionName: !Sub "chainopt-inventory-add-product-${Environment}"
       Handler: addProduct.handler
       Runtime: nodejs22.x
       Timeout: 10
       MemorySize: 256
-      Role: arn:aws:iam::891376911200:role/ChainOptAddProductRole-dev
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-add-product-role"
       Code:
         S3Bucket: !Ref LambdaCodeBucket
         S3Key: !Sub "${LambdaCodePrefix}addProduct.zip"
@@ -35,12 +35,12 @@ Resources:
   GetAllProductsLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "ChainOptGetAllProducts-${Environment}"
+      FunctionName: !Sub "chainopt-inventory-get-all-products-${Environment}"
       Handler: getAllProducts.handler
       Runtime: nodejs22.x
       Timeout: 10
       MemorySize: 256
-      Role: arn:aws:iam::891376911200:role/ChainOptGetAllProductsRole-dev
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-get-all-products-role"
       Code:
         S3Bucket: !Ref LambdaCodeBucket
         S3Key: !Sub "${LambdaCodePrefix}getAllProducts.zip"
@@ -51,12 +51,12 @@ Resources:
   GetProductLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "ChainOptGetProduct-${Environment}"
+      FunctionName: !Sub "chainopt-inventory-get-product-${Environment}"
       Handler: getProduct.handler
       Runtime: nodejs22.x
       Timeout: 10
       MemorySize: 256
-      Role: arn:aws:iam::891376911200:role/ChainOptGetProductRole-dev
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-get-product-role"
       Code:
         S3Bucket: !Ref LambdaCodeBucket
         S3Key: !Sub "${LambdaCodePrefix}getProduct.zip"
@@ -67,12 +67,12 @@ Resources:
   GetAllProductsByWarehouseIdLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "ChainOptGetAllProductsByWarehouseId-${Environment}"
+      FunctionName: !Sub "chainopt-inventory-get-all-products-by-warehouse-id-${Environment}"
       Handler: getAllProductsByWarehouseId.handler
       Runtime: nodejs22.x
       Timeout: 10
       MemorySize: 256
-      Role: arn:aws:iam::891376911200:role/ChainOptGetAllProductsByWarehouseIdRole-dev
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-get-all-products-by-warehouse-id-role"
       Code:
         S3Bucket: !Ref LambdaCodeBucket
         S3Key: !Sub "${LambdaCodePrefix}getAllProductsByWarehouseId.zip"
@@ -83,12 +83,12 @@ Resources:
   DeleteProductLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "ChainOptDeleteProduct-${Environment}"
+      FunctionName: !Sub "chainopt-inventory-delete-product-${Environment}"
       Handler: deleteProduct.handler
       Runtime: nodejs22.x
       Timeout: 10
       MemorySize: 256
-      Role: arn:aws:iam::891376911200:role/ChainOptDeleteProductRole-dev
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-delete-product-role"
       Code:
         S3Bucket: !Ref LambdaCodeBucket
         S3Key: !Sub "${LambdaCodePrefix}deleteProduct.zip"
@@ -99,12 +99,12 @@ Resources:
   UpdateProductLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "ChainOptUpdateProduct-${Environment}"
+      FunctionName: !Sub "chainopt-inventory-update-product-${Environment}"
       Handler: updateProduct.handler
       Runtime: nodejs22.x
       Timeout: 10
       MemorySize: 256
-      Role: arn:aws:iam::891376911200:role/ChainOptUpdateProductRole-dev
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-update-product-role"
       Code:
         S3Bucket: !Ref LambdaCodeBucket
         S3Key: !Sub "${LambdaCodePrefix}updateProduct.zip"
@@ -117,31 +117,31 @@ Outputs:
     Description: ARN of the AddProduct Lambda function
     Value: !GetAtt AddProductLambda.Arn
     Export:
-      Name: !Sub "ChainOptAddProductLambdaArn-${Environment}"
+      Name: !Sub "chainopt-inventory-add-product-lambda-arn-${Environment}"
   GetAllProductsLambdaArn:
     Description: ARN of the GetAllProducts Lambda function
     Value: !GetAtt GetAllProductsLambda.Arn
     Export:
-      Name: !Sub "ChainOptGetAllProductsLambdaArn-${Environment}"
+      Name: !Sub "chainopt-inventory-get-all-products-lambda-arn-${Environment}"
   GetProductLambdaArn:
     Description: ARN of the GetProduct Lambda function
     Value: !GetAtt GetProductLambda.Arn
     Export:
-      Name: !Sub "ChainOptGetProductLambdaArn-${Environment}"
+      Name: !Sub "chainopt-inventory-get-product-lambda-arn-${Environment}"
   GetAllProductsByWarehouseIdLambdaArn:
     Description: ARN of the GetAllProductsByWarehouseId Lambda function
     Value: !GetAtt GetAllProductsByWarehouseIdLambda.Arn
     Export:
-      Name: !Sub "ChainOptGetAllProductsByWarehouseIdLambdaArn-${Environment}"
+      Name: !Sub "chainopt-inventory-get-all-products-by-warehouse-id-lambda-arn-${Environment}"
   DeleteProductLambdaArn:
     Description: ARN of the DeleteProduct Lambda function
     Value: !GetAtt DeleteProductLambda.Arn
     Export:
-      Name: !Sub "ChainOptDeleteProductLambdaArn-${Environment}"
+      Name: !Sub "chainopt-inventory-delete-product-lambda-arn-${Environment}"
   UpdateProductLambdaArn:
     Description: ARN of the UpdateProduct Lambda function
     Value: !GetAtt UpdateProductLambda.Arn
     Export:
-      Name: !Sub "ChainOptUpdateProductLambdaArn-${Environment}"
+      Name: !Sub "chainopt-inventory-update-product-lambda-arn-${Environment}"
 
 

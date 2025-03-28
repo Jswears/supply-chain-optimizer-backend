@@ -12,7 +12,7 @@ Resources:
   ChainOptAddProductLambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      RoleName: !Sub 'ChainOptAddProductLambdaRole-${Environment}'
+      RoleName: !Sub 'chainopt-${Environment}-add-product-role'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -21,7 +21,7 @@ Resources:
               Service: lambda.amazonaws.com
             Action: 'sts:AssumeRole'
       Policies:
-        - PolicyName: 'ChainOptAddProductPolicy'
+        - PolicyName: !Sub 'chainopt-${Environment}-add-product-policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -29,7 +29,7 @@ Resources:
                 Action:
                   - 'dynamodb:PutItem'
                 Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ChainOptInventory-${Environment}'
-        - PolicyName: 'ChainOptAddProductLogPolicy'
+        - PolicyName: !Sub 'chainopt-${Environment}-add-product-log-policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -43,7 +43,7 @@ Resources:
   ChainOptGetAllProductsLambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      RoleName: !Sub 'ChainOptGetAllProductsLambdaRole-${Environment}'
+      RoleName: !Sub 'chainopt-${Environment}-get-all-products-role'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -52,7 +52,7 @@ Resources:
               Service: lambda.amazonaws.com
             Action: 'sts:AssumeRole'
       Policies:
-        - PolicyName: 'ChainOptGetAllProductsPolicy'
+        - PolicyName: !Sub 'chainopt-${Environment}-get-all-products-policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -60,7 +60,7 @@ Resources:
                 Action:
                   - 'dynamodb:Scan'
                 Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ChainOptInventory-${Environment}'
-        - PolicyName: 'ChainOptGetAllProductsLogPolicy'
+        - PolicyName: !Sub 'chainopt-${Environment}-get-all-products-log-policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -74,7 +74,7 @@ Resources:
   ChainOptGetProductLambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      RoleName: !Sub 'ChainOptGetProductLambdaRole-${Environment}'
+      RoleName: !Sub 'chainopt-${Environment}-get-product-role'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -83,7 +83,7 @@ Resources:
               Service: lambda.amazonaws.com
             Action: 'sts:AssumeRole'
       Policies:
-        - PolicyName: 'ChainOptGetProductPolicy'
+        - PolicyName: !Sub 'chainopt-${Environment}-get-product-policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -91,7 +91,7 @@ Resources:
                 Action:
                   - 'dynamodb:GetItem'
                 Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ChainOptInventory-${Environment}'
-        - PolicyName: 'ChainOptGetProductLogPolicy'
+        - PolicyName: !Sub 'chainopt-${Environment}-get-product-log-policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -105,7 +105,7 @@ Resources:
   ChainOptGetAllProductsByWarehouseIdLambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      RoleName: !Sub 'ChainOptGetAllProductsByWarehouseIdLambdaRole-${Environment}'
+      RoleName: !Sub 'chainopt-${Environment}-get-all-products-by-warehouse-id-role'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -114,7 +114,7 @@ Resources:
               Service: lambda.amazonaws.com
             Action: 'sts:AssumeRole'
       Policies:
-        - PolicyName: 'ChainOptGetAllProductsByWarehouseIdPolicy'
+        - PolicyName: !Sub 'chainopt-${Environment}-get-all-products-by-warehouse-id-policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -122,7 +122,7 @@ Resources:
                 Action:
                   - 'dynamodb:Query'
                 Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ChainOptInventory-${Environment}/index/GSI-Warehouse'
-        - PolicyName: 'ChainOptGetAllProductsByWarehouseIdLogPolicy'
+        - PolicyName: !Sub 'chainopt-${Environment}-get-all-products-by-warehouse-id-log-policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -136,7 +136,7 @@ Resources:
   ChainOptDeleteProductLambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      RoleName: !Sub 'ChainOptDeleteProductLambdaRole-${Environment}'
+      RoleName: !Sub 'chainopt-${Environment}-delete-product-role'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -145,7 +145,7 @@ Resources:
               Service: lambda.amazonaws.com
             Action: 'sts:AssumeRole'
       Policies:
-        - PolicyName: 'ChainOptDeleteProductPolicy'
+        - PolicyName: !Sub 'chainopt-${Environment}-delete-product-policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -154,7 +154,7 @@ Resources:
                   - 'dynamodb:DeleteItem'
                   - 'dynamodb:GetItem'
                 Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ChainOptInventory-${Environment}'
-        - PolicyName: 'ChainOptDeleteProductLogPolicy'
+        - PolicyName: !Sub 'chainopt-${Environment}-delete-product-log-policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -168,7 +168,7 @@ Resources:
   ChainOptUpdateProductLambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      RoleName: !Sub 'ChainOptUpdateProductLambdaRole-${Environment}'
+      RoleName: !Sub 'chainopt-${Environment}-update-product-role'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -177,7 +177,7 @@ Resources:
               Service: lambda.amazonaws.com
             Action: 'sts:AssumeRole'
       Policies:
-        - PolicyName: 'ChainOptUpdateProductPolicy'
+        - PolicyName: !Sub 'chainopt-${Environment}-update-product-policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -186,7 +186,7 @@ Resources:
                   - 'dynamodb:UpdateItem'
                   - 'dynamodb:GetItem'
                 Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ChainOptInventory-${Environment}'
-        - PolicyName: 'ChainOptUpdateProductLogPolicy'
+        - PolicyName: !Sub 'chainopt-${Environment}-update-product-log-policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -201,7 +201,7 @@ Resources:
   ChainOptInitializeDBLambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      RoleName: !Sub 'ChainOptInitializeDBLambdaRole-${Environment}'
+      RoleName: !Sub 'chainopt-${Environment}-initialize-db-role'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -210,7 +210,7 @@ Resources:
               Service: lambda.amazonaws.com
             Action: 'sts:AssumeRole'
       Policies:
-        - PolicyName: 'ChainOptInitializeDBLambdaPolicy'
+        - PolicyName: !Sub 'chainopt-${Environment}-initialize-db-policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -239,7 +239,7 @@ Resources:
                   - 'rds:DescribeDBInstances'
                   - 'rds:DescribeDBClusters'
                 Resource: '*'
-        - PolicyName: 'ChainOptInitializeDBLambdaLogPolicy'
+        - PolicyName: !Sub 'chainopt-${Environment}-initialize-db-log-policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -253,7 +253,7 @@ Resources:
   ChainOptUpdateSecretLambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      RoleName: !Sub 'ChainOptUpdateSecretLambdaRole-${Environment}'
+      RoleName: !Sub 'chainopt-${Environment}-update-secret-role'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -262,7 +262,7 @@ Resources:
               Service: lambda.amazonaws.com
             Action: 'sts:AssumeRole'
       Policies:
-        - PolicyName: 'ChainOptUpdateSecretLambdaPolicy'
+        - PolicyName: !Sub 'chainopt-${Environment}-update-secret-policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -282,7 +282,7 @@ Resources:
                   - 'ec2:DescribeNetworkInterfaces'
                   - 'ec2:DeleteNetworkInterface'
                 Resource: '*'
-        - PolicyName: 'ChainOptUpdateSecretLambdaLogPolicy'
+        - PolicyName: !Sub 'chainopt-${Environment}-update-secret-log-policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -296,7 +296,7 @@ Resources:
   ChainOptCreateOrderLambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      RoleName: !Sub 'ChainOptCreateOrderLambdaRole-${Environment}'
+      RoleName: !Sub 'chainopt-${Environment}-create-order-role'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -305,7 +305,7 @@ Resources:
               Service: lambda.amazonaws.com
             Action: 'sts:AssumeRole'
       Policies:
-        - PolicyName: 'ChainOptCreateOrderPolicy'
+        - PolicyName: !Sub 'chainopt-${Environment}-create-order-policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -331,7 +331,7 @@ Resources:
                   - 'ec2:DescribeNetworkInterfaces'
                   - 'ec2:DeleteNetworkInterface'
                 Resource: '*'
-        - PolicyName: 'ChainOptCreateOrderLogPolicy'
+        - PolicyName: !Sub 'chainopt-${Environment}-create-order-log-policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -345,7 +345,7 @@ Resources:
   ChainOptGetOrdersLambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      RoleName: !Sub 'ChainOptGetOrdersLambdaRole-${Environment}'
+      RoleName: !Sub 'chainopt-${Environment}-get-orders-role'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -354,7 +354,7 @@ Resources:
               Service: lambda.amazonaws.com
             Action: 'sts:AssumeRole'
       Policies:
-        - PolicyName: 'ChainOptGetOrdersPolicy'
+        - PolicyName: !Sub 'chainopt-${Environment}-get-orders-policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -372,7 +372,7 @@ Resources:
                   - 'ec2:DescribeNetworkInterfaces'
                   - 'ec2:DeleteNetworkInterface'
                 Resource: '*'
-        - PolicyName: 'ChainOptGetOrdersLogPolicy'
+        - PolicyName: !Sub 'chainopt-${Environment}-get-orders-log-policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -387,41 +387,41 @@ Outputs:
   ChainOptAddProductLambdaRoleArn:
     Value: !GetAtt ChainOptAddProductLambdaRole.Arn
     Export:
-      Name: !Sub 'ChainOptAddProductLambdaRoleArn-${Environment}'
+      Name: !Sub 'chainopt-${Environment}-add-product-role-arn'
   ChainOptGetAllProductsLambdaRoleArn:
     Value: !GetAtt ChainOptGetAllProductsLambdaRole.Arn
     Export:
-      Name: !Sub 'ChainOptGetAllProductsLambdaRoleArn-${Environment}'
+      Name: !Sub 'chainopt-${Environment}-get-all-products-role-arn'
   ChainOptGetProductLambdaRoleArn:
     Value: !GetAtt ChainOptGetProductLambdaRole.Arn
     Export:
-      Name: !Sub 'ChainOptGetProductLambdaRoleArn-${Environment}'
+      Name: !Sub 'chainopt-${Environment}-get-product-role-arn'
   ChainOptGetAllProductsByWarehouseIdLambdaRoleArn:
     Value: !GetAtt ChainOptGetAllProductsByWarehouseIdLambdaRole.Arn
     Export:
-      Name: !Sub 'ChainOptGetAllProductsByWarehouseIdLambdaRoleArn-${Environment}'
+      Name: !Sub 'chainopt-${Environment}-get-all-products-by-warehouse-id-role-arn'
   ChainOptDeleteProductLambdaRoleArn:
     Value: !GetAtt ChainOptDeleteProductLambdaRole.Arn
     Export:
-      Name: !Sub 'ChainOptDeleteProductLambdaRoleArn-${Environment}'
+      Name: !Sub 'chainopt-${Environment}-delete-product-role-arn'
   ChainOptUpdateProductLambdaRoleArn:
     Value: !GetAtt ChainOptUpdateProductLambdaRole.Arn
     Export:
-      Name: !Sub 'ChainOptUpdateProductLambdaRoleArn-${Environment}'
+      Name: !Sub 'chainopt-${Environment}-update-product-role-arn'
   ChainOptInitializeDBLambdaRoleArn:
     Value: !GetAtt ChainOptInitializeDBLambdaRole.Arn
     Export:
-      Name: !Sub 'ChainOptInitializeDBLambdaRoleArn-${Environment}'
+      Name: !Sub 'chainopt-${Environment}-initialize-db-role-arn'
   ChainOptUpdateSecretLambdaRoleArn:
     Value: !GetAtt ChainOptUpdateSecretLambdaRole.Arn
     Export:
-      Name: !Sub 'ChainOptUpdateSecretLambdaRoleArn-${Environment}'
+      Name: !Sub 'chainopt-${Environment}-update-secret-role-arn'
   ChainOptCreateOrderLambdaRoleArn:
     Value: !GetAtt ChainOptCreateOrderLambdaRole.Arn
     Export:
-      Name: !Sub 'ChainOptCreateOrderLambdaRoleArn-${Environment}'
+      Name: !Sub 'chainopt-${Environment}-create-order-role-arn'
   ChainOptGetOrdersLambdaRoleArn:
     Value: !GetAtt ChainOptGetOrdersLambdaRole.Arn
     Export:
-      Name: !Sub 'ChainOptGetOrdersLambdaRoleArn-${Environment}'
+      Name: !Sub 'chainopt-${Environment}-get-orders-role-arn'
 
