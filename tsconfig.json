@@ -17,6 +17,6 @@
     "isolatedModules": true,
     "types": ["node", "aws-lambda"]
   },
-  "include": ["src/**/*.ts", ],
+  "include": ["src/**/*.ts", "src/**/*.d.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "esbuild.config.ts"]
 }

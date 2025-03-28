@@ -1,0 +1,256 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'ChainOpt infrastructure stack: VPC, Subnets, Route Tables, Endpoints and Security Groups'
+
+Resources:
+
+  ProjectChainoptVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: project-chainopt-vpc
+
+  # Public Subnets
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ProjectChainoptVPC
+      AvailabilityZone: eu-central-1a
+      CidrBlock: 10.0.0.0/20
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: project-chainopt-subnet-public1-eu-central-1a
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ProjectChainoptVPC
+      AvailabilityZone: eu-central-1b
+      CidrBlock: 10.0.16.0/20
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: project-chainopt-subnet-public2-eu-central-1b
+
+  # Private Subnets
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ProjectChainoptVPC
+      AvailabilityZone: eu-central-1a
+      CidrBlock: 10.0.128.0/20
+      Tags:
+        - Key: Name
+          Value: project-chainopt-subnet-private1-eu-central-1a
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ProjectChainoptVPC
+      AvailabilityZone: eu-central-1b
+      CidrBlock: 10.0.144.0/20
+      Tags:
+        - Key: Name
+          Value: project-chainopt-subnet-private2-eu-central-1b
+
+  # Internet Gateway + Route Tables
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: project-chainopt-igw
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref ProjectChainoptVPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref ProjectChainoptVPC
+      Tags:
+        - Key: Name
+          Value: project-chainopt-rtb-public
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref ProjectChainoptVPC
+      Tags:
+        - Key: Name
+          Value: project-chainopt-rtb-private1-eu-central-1a
+
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref ProjectChainoptVPC
+      Tags:
+        - Key: Name
+          Value: project-chainopt-rtb-private2-eu-central-1b
+
+  # Subnet <-> Route Table associations
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable1
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable2
+
+  # VPC Endpoints
+  DynamoDBVPCEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref ProjectChainoptVPC
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.dynamodb"
+      RouteTableIds:
+        - !Ref PrivateRouteTable1
+        - !Ref PrivateRouteTable2
+      VpcEndpointType: Gateway
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: "dynamodb:*"
+            Resource: "*"
+      Tags:
+        - Key: Name
+          Value: project-chainopt-dynamodb-vpc-endpoint
+
+  # Secrets Manager VPC Endpoint
+  SecretsManagerVPCEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref ProjectChainoptVPC
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.secretsmanager"
+      VpcEndpointType: Interface
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      SecurityGroupIds:
+        - !Ref SecretsManagerSecurityGroup
+      PrivateDnsEnabled: true
+      Tags:
+        - Key: Name
+          Value: project-chainopt-secretsmanager-vpc-endpoint
+
+  # ✅ Lambda Security Group
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref ProjectChainoptVPC
+      GroupDescription: Security group for Lambdas accessing RDS
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+  # ✅ RDS Security Group
+  RDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref ProjectChainoptVPC
+      GroupDescription: Security group for RDS instance
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref LambdaSecurityGroup
+
+  # Secrets Manager Endpoint Security Group
+  SecretsManagerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref ProjectChainoptVPC
+      GroupDescription: Security group for Secrets Manager VPC Endpoint
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: !Ref LambdaSecurityGroup
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+
+Outputs:
+
+  VPC:
+    Description: A reference to the created VPC
+    Value: !Ref ProjectChainoptVPC
+    Export:
+      Name: project-chainopt-vpc
+
+  PublicSubnets:
+    Description: A list of the public subnets
+    Value: !Join [ ",", [ !Ref PublicSubnet1, !Ref PublicSubnet2 ]]
+    Export:
+      Name: project-chainopt-public-subnets
+
+  PrivateSubnets:
+    Description: A list of the private subnets
+    Value: !Join [ ",", [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]]
+    Export:
+      Name: project-chainopt-private-subnets
+
+  PublicRouteTable:
+    Description: A reference to the public route table
+    Value: !Ref PublicRouteTable
+    Export:
+      Name: project-chainopt-public-route-table
+
+  DynamoDBVPCEndpoint:
+    Description: A reference to the DynamoDB VPC endpoint
+    Value: !Ref DynamoDBVPCEndpoint
+    Export:
+      Name: project-chainopt-dynamodb-vpc-endpoint
+
+  LambdaSecurityGroupId:
+    Description: SG for Lambdas to connect to RDS
+    Value: !Ref LambdaSecurityGroup
+    Export:
+      Name: chainopt-lambda-sg
+
+  RDSSecurityGroupId:
+    Description: SG for RDS instance
+    Value: !Ref RDSSecurityGroup
+    Export:
+      Name: chainopt-rds-sg
+
+  SecretsManagerSecurityGroupId:
+    Description: SG for Secrets Manager
+    Value: !Ref SecretsManagerSecurityGroup
+    Export:
+      Name: chainopt-secretsmanager-sg

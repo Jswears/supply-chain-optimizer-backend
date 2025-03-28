@@ -1,0 +1,4 @@
+{
+    "Environment": "prod",
+    "TableName": "ChainOptInventory"
+}

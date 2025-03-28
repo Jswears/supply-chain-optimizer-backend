@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "DynamoDB table for ChainOpt Inventory."
+
+Parameters:
+  Environment:
+    Type: String
+    Description: "Deployment environment (dev, staging, prod)."
+    AllowedValues: [dev, staging, prod]
+    Default: dev
+  TableName:
+    Type: String
+    Description: "DynamoDB table name."
+    Default: "ChainOptInventory"
+
+Resources:
+  ChainOptInventoryTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${TableName}-${Environment}"
+      AttributeDefinitions:
+        - AttributeName: product_id
+          AttributeType: S
+        - AttributeName: warehouse_id
+          AttributeType: S
+        - AttributeName: category
+          AttributeType: S
+        - AttributeName: supplier
+          AttributeType: S
+      KeySchema:
+        - AttributeName: product_id
+          KeyType: HASH
+        - AttributeName: warehouse_id
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      GlobalSecondaryIndexes:
+        - IndexName: !Sub "GSI-Category"
+          KeySchema:
+            - AttributeName: category
+              KeyType: HASH
+            - AttributeName: product_id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: !Sub "GSI-Supplier"
+          KeySchema:
+            - AttributeName: supplier
+              KeyType: HASH
+            - AttributeName: product_id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: !Sub "GSI-Warehouse"
+          KeySchema:
+            - AttributeName: warehouse_id
+              KeyType: HASH
+            - AttributeName: product_id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      SSESpecification:
+        SSEEnabled: true
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      Tags:
+        - Key: Project
+          Value: ChainOpt
+        - Key: Environment
+          Value: !Ref Environment
+
+Outputs:
+  TableName:
+    Description: "DynamoDB table name"
+    Value: !Ref ChainOptInventoryTable
+  TableArn:
+    Description: "DynamoDB table ARN"
+    Value: !GetAtt ChainOptInventoryTable.Arn
+  StreamArn:
+    Description: "DynamoDB Stream ARN"
+    Value: !GetAtt ChainOptInventoryTable.StreamArn
