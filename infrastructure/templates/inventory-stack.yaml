@@ -104,7 +104,7 @@ Resources:
       Runtime: nodejs22.x
       Timeout: 10
       MemorySize: 256
-      Role: arn:aws:iam::891376911200:role/ChainOptUpdateProductRole-dev
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-update-product-role
       Code:
         S3Bucket: !Ref LambdaCodeBucket
         S3Key: !Sub "${LambdaCodePrefix}/updateProduct.zip"
