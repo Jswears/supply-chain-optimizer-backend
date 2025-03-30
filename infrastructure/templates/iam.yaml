@@ -7,6 +7,10 @@ Parameters:
     Description: 'Deployment environment (dev, staging, prod).'
     AllowedValues: [dev, staging, prod]
     Default: dev
+  ForecastCodeBucket:
+    Type: String
+    Description: 'S3 bucket for forecast code'
+    Default: ''
 
 Resources:
   ChainOptAddProductLambdaRole:
@@ -416,6 +420,78 @@ Resources:
                   - 'logs:PutLogEvents'
                 Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-orders-get-orders-${Environment}:*'
 
+# Forecast
+  ChainOptForecastPredictionLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'chainopt-${Environment}-forecast-prediction-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'chainopt-${Environment}-forecast-prediction-log-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-forecast-prediction-${Environment}:*'
+        - PolicyName: !Sub 'chainopt-${Environment}-forecast-prediction-s3-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:ListBucket'
+                Resource: !Sub 'arn:aws:s3:::${ForecastCodeBucket}'
+              - Effect: Allow
+                Action:
+                  - 's3:GetObject'
+                  - 's3:PutObject'
+                Resource: !Sub 'arn:aws:s3:::${ForecastCodeBucket}/*'
+
+  ChainOptForecastPredictionSummaryLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'chainopt-${Environment}-forecast-prediction-summary-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'chainopt-${Environment}-forecast-prediction-summary-log-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-forecast-prediction-summary-${Environment}:*'
+        - PolicyName: !Sub 'chainopt-${Environment}-forecast-prediction-summary-s3-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:ListBucket'
+                Resource: !Sub 'arn:aws:s3:::${ForecastCodeBucket}'
+              - Effect: Allow
+                Action:
+                  - 's3:GetObject'
+                  - 's3:PutObject'
+                Resource: !Sub 'arn:aws:s3:::${ForecastCodeBucket}/*'
 Outputs:
   ChainOptAddProductLambdaRoleArn:
     Value: !GetAtt ChainOptAddProductLambdaRole.Arn
@@ -461,4 +537,12 @@ Outputs:
     Value: !GetAtt ChainOptGetOrdersLambdaRole.Arn
     Export:
       Name: !Sub 'chainopt-${Environment}-get-orders-role-arn'
+  ChainOptForecastPredictionLambdaRoleArn:
+    Value: !GetAtt ChainOptForecastPredictionLambdaRole.Arn
+    Export:
+      Name: !Sub 'chainopt-${Environment}-forecast-prediction-role-arn'
+  ChainOptForecastPredictionSummaryLambdaRole:
+    Value: !GetAtt ChainOptForecastPredictionSummaryLambdaRole.Arn
+    Export:
+      Name: !Sub 'chainopt-${Environment}-forecast-prediction-summary-role-arn'
 

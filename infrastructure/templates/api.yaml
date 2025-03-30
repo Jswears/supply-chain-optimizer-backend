@@ -30,6 +30,7 @@ Resources:
       - TransferMethodPOST
       - OrdersMethodGET
       - OrdersMethodPOST
+      - PredictMethodGET
     Properties:
       RestApiId: !Ref ChainOptApi
       Description: "Deployment for ChainOpt API"
@@ -468,6 +469,134 @@ Resources:
             method.response.header.Access-Control-Allow-Methods: true
 
 ######################################################
+# 6) /predict/{productId} Resource
+######################################################
+  PredictResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt ChainOptApi.RootResourceId
+      PathPart: predict
+      RestApiId: !Ref ChainOptApi
+
+  PredictProductIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref PredictResource
+      PathPart: "{productId}"
+      RestApiId: !Ref ChainOptApi
+
+# GET /predict/{productId} Method
+  PredictMethodGET:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: GET
+      ResourceId: !Ref PredictProductIdResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-forecast-prediction-function-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 200
+
+# OPTIONS /predict/{productId} Method for CORS support
+  PredictMethodOPTIONS:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: OPTIONS
+      ResourceId: !Ref PredictProductIdResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        PassthroughBehavior: NEVER
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET'"
+            ResponseTemplates:
+              application/json: ""
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+
+######################################################
+# 7) /predict/{productId}/summary Resource
+######################################################
+  PredictSummaryResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref PredictProductIdResource
+      PathPart: summary
+      RestApiId: !Ref ChainOptApi
+
+# POST /predict/{productId}/summary Method
+  PredictSummaryMethodPOST:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: POST
+      ResourceId: !Ref PredictSummaryResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-forecast-prediction-summary-function-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 200
+# OPTIONS /predict/{productId}/summary Method for CORS support
+  PredictSummaryMethodOPTIONS:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: OPTIONS
+      ResourceId: !Ref PredictSummaryResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        PassthroughBehavior: NEVER
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,POST'"
+            ResponseTemplates:
+              application/json: ""
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+
+######################################################
 # Lambda Permissions for Inventory Functions
 ######################################################
 # AddProduct Lambda Permission
@@ -559,6 +688,19 @@ Resources:
     Properties:
       FunctionName: !ImportValue
         Fn::Sub: "chainopt-orders-get-orders-function-arn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
+
+######################################################
+# Lambda Permissions for Prediction Functions
+######################################################
+# Prediction Lambda Permission
+  PredictionLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "chainopt-forecast-prediction-function-arn-${Environment}"
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
