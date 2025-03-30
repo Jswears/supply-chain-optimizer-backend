@@ -1,5 +1,5 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
-import { nanoid } from 'nanoid';
+// Import { nanoid } from 'nanoid';
 import { errorResponse, successResponse } from '../../utils/response';
 import { productSchema, validateInput } from '../../utils/validators/inventoryValidation';
 import { dynamoDb, INVENTORY_TABLE_NAME } from '../../utils/dynamodb';
@@ -29,7 +29,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     const productItem = {
       ...product,
-      product_id: `PROD-${nanoid(8)}`,
+      // Product_id: `PROD-${nanoid(8)}`   // This is correct usage, underneath it is just to test with pre-made product_id, easier for sagemaker
+      product_id: product.product_id,
     };
 
     logger.log('debug', 'Storing product in DynamoDB', { product: productItem, correlationId });

@@ -25,7 +25,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       TableName: INVENTORY_TABLE_NAME,
       Limit: limit,
       ExclusiveStartKey: lastEvaluatedKey,
-      ProjectionExpression: 'product_id, product_name, stock_level, warehouse_id',
+      ProjectionExpression:
+        'product_id, product_name, stock_level, warehouse_id, category, supplier',
     });
 
     if (!result.Items || result.Items.length === 0) {
