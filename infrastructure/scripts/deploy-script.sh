@@ -3,6 +3,8 @@
 # Variables
 S3_BUCKET=chainopt-cf-artifacts
 S3_PREFIX=lambdas
+S3_FORECAST_BUCKET=chainopt-ml-models
+S3_FORECAST_PREFIX=predictions
 ENVIRONMENT=dev
 REGION=eu-central-1
 
@@ -22,7 +24,9 @@ deploy_iam_roles() {
         --template-file infrastructure/templates/iam.yaml \
         --stack-name chainopt-iam-roles-$ENVIRONMENT-$REGION \
         --capabilities CAPABILITY_NAMED_IAM \
-        --parameter-overrides Environment=$ENVIRONMENT
+        --parameter-overrides \
+         Environment=$ENVIRONMENT \
+         ForecastCodeBucket=$S3_FORECAST_BUCKET
 }
 
 deploy_infra() {
@@ -164,6 +168,21 @@ deploy_orders_lambda() {
         LambdaCodePrefix=$S3_PREFIX
 }
 
+deploy_forecast_lambda() {
+    print_header "Deploying forecast Lambda functions"
+    aws cloudformation deploy \
+        --template-file infrastructure/templates/forecast-stack.yaml \
+        --stack-name chainopt-forecast-stack-$ENVIRONMENT-$REGION \
+        --capabilities CAPABILITY_NAMED_IAM \
+        --parameter-overrides \
+        Environment=$ENVIRONMENT \
+        LambdaCodeBucket=$S3_BUCKET \
+        LambdaCodePrefix=$S3_PREFIX \
+        ForecastCodeBucket=$S3_FORECAST_BUCKET \
+        ForecastCodePrefix=$S3_FORECAST_PREFIX \
+        FileName=forecast_results.csv
+}
+
 deploy_api() {
     print_header "Deploying unified API Gateway"
     aws cloudformation deploy \
@@ -192,6 +211,17 @@ deploy_all() {
     fi
 
     deploy_orders_lambda
+    if [ $? -ne 0 ]; then
+        echo "Failed to deploy orders Lambda functions. Check the logs above."
+        exit 1
+    fi
+
+    deploy_forecast_lambda
+    if [ $? -ne 0 ]; then
+        echo "Failed to deploy forecast Lambda functions. Check the logs above."
+        exit 1
+    fi
+
     deploy_api
     print_header "DEPLOYMENT COMPLETE!"
 
@@ -219,10 +249,11 @@ if [ $# -eq 0 ]; then
     echo "8) Upload Lambdas to S3"
     echo "9) Deploy inventory Lambda"
     echo "10) Deploy orders Lambda"
-    echo "11) Deploy API Gateway"
+    echo "11) Deploy forecast Lambda"
+    echo "12) Deploy API Gateway"
     echo "q) Quit"
 
-    read -p "Enter choice [1-11 or q]: " choice
+    read -p "Enter choice [1-12 or q]: " choice
 
     case $choice in
         1) deploy_all ;;
@@ -235,7 +266,8 @@ if [ $# -eq 0 ]; then
         8) upload_lambdas_to_s3 ;;
         9) deploy_inventory_lambda ;;
         10) deploy_orders_lambda ;;
-        11) deploy_api ;;
+        11) deploy_forecast_lambda ;;
+        12) deploy_api ;;
         q|Q) echo "Exiting"; exit 0 ;;
         *) echo "Invalid choice"; exit 1 ;;
     esac
@@ -253,6 +285,8 @@ else
         inventory) deploy_inventory_lambda ;;
         orders) deploy_orders_lambda ;;
         api) deploy_api ;;
+        forecast) deploy_forecast_lambda ;;
+        help) echo "Usage: $0 [all|iam|infra|db|secrets|rds|build|upload|inventory|orders|api|forecast]"; exit 0 ;;
         *) echo "Unknown argument: $1"; exit 1 ;;
     esac
 fi
