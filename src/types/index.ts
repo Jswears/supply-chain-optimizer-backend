@@ -19,3 +19,19 @@ export interface Order {
   status: 'Pending' | 'Completed' | 'Cancelled';
   created_at?: string;
 }
+
+// Prediction types
+export interface Prediction {
+  date: string;
+  predicted_value: number;
+  lower_bound: number;
+  upper_bound: number;
+}
+
+export interface CSVRow {
+  item_id: string;
+  date: string;
+  predicted_value: string;
+  lower_bound: string;
+  upper_bound: string;
+}
