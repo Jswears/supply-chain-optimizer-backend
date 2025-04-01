@@ -170,6 +170,31 @@ deploy_orders_lambda() {
 
 deploy_forecast_lambda() {
     print_header "Deploying forecast Lambda functions"
+
+    # Check if the secret already exists in AWS Secrets Manager
+    SECRET_NAME="chainopt-openai-api-key-$ENVIRONMENT"
+    echo "Checking if secret $SECRET_NAME exists in Secrets Manager..."
+    if ! aws secretsmanager describe-secret --secret-id "$SECRET_NAME" --region "$REGION" &>/dev/null; then
+        # Request API key from the user if the secret does not exist
+        read -p "Enter the API key for the forecast service: " OPENAI_API_KEY
+
+        # Store the API key in AWS Secrets Manager
+        echo "Storing API key in Secrets Manager under secret name: $SECRET_NAME"
+        aws secretsmanager create-secret \
+            --name "$SECRET_NAME" \
+            --description "API key for forecast service" \
+            --secret-string "$OPENAI_API_KEY" \
+            --region "$REGION"
+
+        if [ $? -ne 0 ]; then
+            echo "❌ Error: Failed to store API key in Secrets Manager."
+            exit 1
+        fi
+    else
+        echo "✅ Secret $SECRET_NAME already exists in Secrets Manager."
+    fi
+
+    # Deploy the forecast Lambda functions
     aws cloudformation deploy \
         --template-file infrastructure/templates/forecast-stack.yaml \
         --stack-name chainopt-forecast-stack-$ENVIRONMENT-$REGION \
@@ -180,7 +205,8 @@ deploy_forecast_lambda() {
         LambdaCodePrefix=$S3_PREFIX \
         ForecastCodeBucket=$S3_FORECAST_BUCKET \
         ForecastCodePrefix=$S3_FORECAST_PREFIX \
-        FileName=forecast_results.csv
+        FileName=forecast_results.csv \
+        ApiKeySecretName=$SECRET_NAME
 }
 
 deploy_api() {

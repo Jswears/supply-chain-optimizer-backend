@@ -56,6 +56,16 @@ delete_orders_lambda() {
     --stack-name chainopt-orders-stack-$ENVIRONMENT-$REGION
 }
 
+delete_forecast_lambda() {
+  print_header "Deleting Forecast Lambda Stack"
+  aws cloudformation delete-stack \
+    --stack-name chainopt-forecast-stack-$ENVIRONMENT-$REGION
+
+  echo "Waiting for Forecast Lambda stack deletion to complete..."
+  aws cloudformation wait stack-delete-complete \
+    --stack-name chainopt-forecast-stack-$ENVIRONMENT-$REGION
+}
+
 # Delete Lambda artifacts from S3
 delete_lambda_artifacts() {
   print_header "Deleting Lambda artifacts from S3"
@@ -144,6 +154,7 @@ delete_all() {
   delete_api
   delete_inventory_lambda
   delete_orders_lambda
+  delete_forecast_lambda
   delete_lambda_artifacts
   delete_rds
   delete_secret_manager
