@@ -20,9 +20,9 @@ ChainOpt uses a serverless microservices architecture on AWS with the following 
 - **API Gateway** - RESTful API endpoints for all services
 - **Lambda Functions** - Serverless compute for business logic
 - **DynamoDB** - NoSQL storage for inventory data
-- **RDS (PostgreSQL)** - Relational storage for orders and complex data
-- **S3** - Object storage for lambda code and assets
-- **CloudFormation** - Infrastructure as Code for all resources
+- **RDS (PostgreSQL)** - Relational storage for orders data
+- **S3** - Object storage for lambda code, forecast data
+- **Secrets Manager** - Secure storage for database credentials
 - **CloudWatch** - Monitoring and logging
 - **IAM** - Security and permissions
 
@@ -32,10 +32,11 @@ Before deploying, ensure you have:
 
 1. **AWS Account** with administrator access
 2. **AWS CLI** installed and configured
-3. **Node.js** v18+ and npm
+3. **Node.js** v22+ and npm
 4. **Git** for version control
 5. **S3 Bucket** for CloudFormation templates and Lambda code
 6. **IAM permissions** to create all required resources
+7. **OpenAI API Key** for forecast summary generation
 
 ## Deployment Process
 
@@ -50,14 +51,14 @@ export REGION=eu-central-1
 export S3_BUCKET=chainopt-cf-artifacts
 
 # Clone the repository
-git clone https://github.com/Jswears/chainopt.git
-cd chainopt/supply-chain-optimizer-backend/
+git clone https://github.com/Jswears/supply-chain-optimizer-backend.git
+cd supply-chain-optimizer-backend/
 
 # Install dependencies
 npm install
 
-# Build the project
-npm run build
+# Build the project (this is handled by the deployment script, but in case of issues)
+npx tsx esbuild.config.ts
 
 # Run the deployment script
 cd infrastructure/scripts
@@ -69,7 +70,6 @@ The script provides an interactive menu. Select "1" to deploy everything or sele
 The deployment script handles all the steps automatically including:
 - Building and zipping Lambda functions
 - Creating/updating IAM roles and policies
-- Setting up VPC and networking components
 - Creating DynamoDB tables
 - Configuring Secrets Manager
 - Provisioning RDS database
@@ -149,7 +149,8 @@ If you prefer to deploy each component separately for more control, follow these
      --parameter-overrides \
        Environment=${ENVIRONMENT} \
        LambdaCodeBucket=chainopt-lambda-${ENVIRONMENT} \
-       LambdaCodePrefix=lambdas/
+       LambdaCodePrefix=lambdas/ \
+       InventoryTableName=ChainOptInventory-${ENVIRONMENT}
 
    # Deploy Orders Lambda Stack
    aws cloudformation deploy \
@@ -159,7 +160,20 @@ If you prefer to deploy each component separately for more control, follow these
      --parameter-overrides \
        Environment=${ENVIRONMENT} \
        LambdaCodeBucket=chainopt-lambda-${ENVIRONMENT} \
-       LambdaCodePrefix=lambdas/
+       LambdaCodePrefix=lambdas/ \
+       RDSSecretId=ChainOptRDSCredentials-${ENVIRONMENT}
+
+   # Deploy Forecast Lambda Stack
+   aws cloudformation deploy \
+     --template-file infrastructure/templates/forecast-stack.yaml \
+     --stack-name chainopt-forecast-${ENVIRONMENT} \
+     --capabilities CAPABILITY_NAMED_IAM \
+     --parameter-overrides \
+       Environment=${ENVIRONMENT} \
+       LambdaCodeBucket=chainopt-lambda-${ENVIRONMENT} \
+       LambdaCodePrefix=lambdas/ \
+       OpenAIApiKeySecretId=ChainOptOpenAIKey-${ENVIRONMENT} \
+       ForecastBucketName=chainopt-ml-models-${ENVIRONMENT}
    ```
 
 8. **Deploy Unified API Gateway**
@@ -205,9 +219,21 @@ After deployment, verify that the system is functioning correctly:
 3. **Check Lambda Logs** - Review CloudWatch logs for any errors
    ```bash
    aws logs filter-log-events \
-     --log-group-name /aws/lambda/chainopt-inventory-get-all-products-${ENVIRONMENT} \
+     --log-group-name /aws/lambda/chainopt-inventory-get-all-products-${Environment} \
      --filter-pattern "ERROR" \
      --start-time $(date -d '1 hour ago' +%s000)
+   ```
+
+4. **Verify Database Connectivity** - Check if database initialization Lambda executed successfully:
+   ```bash
+   aws logs get-log-events \
+     --log-group-name /aws/lambda/chainopt-orders-initialize-db-${Environment}} \
+     --limit 10
+   ```
+
+5. **Test Forecast Data** - Verify that forecast data is accessible:
+   ```bash
+   curl -X GET "$API_URL/forecast/PROD-12345678"
    ```
 
 ## Maintenance and Updates
@@ -219,22 +245,42 @@ After deployment, verify that the system is functioning correctly:
    ```bash
    npx tsx esbuild.config.ts
    ```
-3. Upload to S3 and update the stack
+3. Upload to S3 and update the Lambda function
    ```bash
    aws s3 cp infrastructure/build/updatedFunction.zip s3://$S3_BUCKET/lambdas/
-   aws cloudformation update-stack --stack-name chainopt-inventory-${ENVIRONMENT} ...
+   aws lambda update-function-code \
+     --function-name chainopt-inventory-getAllProducts-${ENVIRONMENT} \
+     --s3-bucket $S3_BUCKET \
+     --s3-key lambdas/getAllProducts.zip
+   ```
+
+### Database Maintenance
+
+1. **RDS Backups** - Backups are automatically managed by AWS RDS
+2. **DynamoDB** - Consider enabling point-in-time recovery for important tables
+
+### Environment Variables and Secrets
+
+1. To update environment variables for a Lambda function:
+   ```bash
+   aws lambda update-function-configuration \
+     --function-name chainopt-inventory-getAllProducts-${ENVIRONMENT} \
+     --environment "Variables={INVENTORY_TABLE_NAME=new-table-name,NODE_ENV=prod}"
+   ```
+
+2. To update AWS Secrets Manager secrets:
+   ```bash
+   aws secretsmanager update-secret \
+     --secret-id ChainOptRDSCredentials-${ENVIRONMENT} \
+     --secret-string "{\"username\":\"dbadmin\",\"password\":\"newpassword\",\"host\":\"new-host\",\"port\":\"5432\",\"dbname\":\"chainopt_orders\"}"
    ```
 
 ### Scaling Considerations
 
-- **DynamoDB**: Monitor provision capacity and consider auto-scaling
+- **DynamoDB**: Monitor provisioned capacity and consider auto-scaling
 - **Lambda**: Adjust memory/timeout for functions with high execution time
 - **API Gateway**: Set appropriate throttling limits
-
-### Monitoring
-
-- Set up CloudWatch Alarms for error rates and latency
-- Create a dashboard for key metrics
+- **RDS**: Consider upgrading instance size based on order volume
 
 ## Troubleshooting
 
@@ -244,16 +290,27 @@ After deployment, verify that the system is functioning correctly:
    - Check Lambda execution permissions
    - Verify Lambda function timeout settings
    - Review CloudWatch logs for errors
+   - Ensure CORS is properly configured
 
 2. **DynamoDB Errors**
    - Verify IAM permissions for Lambda roles
    - Check capacity provisioning
+   - Validate key schema in table access
 
-3. **Deployment Failures**
-   - Review CloudFormation events:
-     ```bash
-     aws cloudformation describe-stack-events --stack-name chainopt-api-${ENVIRONMENT}
-     ```
+3. **RDS Connection Issues**
+   - Verify VPC and security group configurations
+   - Check that Lambda functions have the correct network access
+   - Validate database credentials in Secrets Manager
+
+4. **Forecast Data Not Available**
+   - Check S3 bucket permissions
+   - Verify CSV file format and structure
+   - Ensure Lambda has permissions to access S3
+
+5. **OpenAI API Errors**
+   - Verify the API key is correctly stored and accessible
+   - Check for rate limiting or quota issues
+   - Review error messages in CloudWatch logs
 
 ### Lambda Logs
 
@@ -261,9 +318,9 @@ To check Lambda logs:
 
 ```bash
 aws logs get-log-events \
-  --log-group-name /aws/lambda/chainopt-inventory-get-all-products-${ENVIRONMENT} \
+  --log-group-name /aws/lambda/chainopt-inventory-getAllProducts-${ENVIRONMENT} \
   --log-stream-name $(aws logs describe-log-streams \
-    --log-group-name /aws/lambda/chainopt-inventory-get-all-products-${ENVIRONMENT} \
+    --log-group-name /aws/lambda/chainopt-inventory-getAllProducts-${ENVIRONMENT} \
     --order-by LastEventTime \
     --descending \
     --limit 1 \
@@ -311,7 +368,11 @@ If you prefer to delete resources manually, follow this order to avoid dependenc
 
 ## API Reference
 
-### Products Endpoints
+For a comprehensive list of all API endpoints, request and response formats, please refer to our [API Documentation](../docs/API.md).
+
+### Quick Reference for Common Endpoints
+
+#### Inventory Endpoints
 
 ```bash
 # Get all products
@@ -321,63 +382,72 @@ curl -X GET $API_URL/products
 curl -X POST $API_URL/products \
   -H "Content-Type: application/json" \
   -d '{
-    "product_name": "Example Product",
-    "warehouse_id": "warehouse-001",
+    "product_name": "Chocolate Chip Cookies",
+    "warehouse_id": "WH-001",
     "stock_level": 100,
     "reorder_threshold": 20,
-    "supplier": "Supplier Inc.",
-    "category": "Electronics"
+    "supplier": "Sweet Treats Inc.",
+    "category": "Baked Goods"
   }'
 
 # Get a specific product
-curl -X GET "$API_URL/products/PROD-12345?warehouseId=warehouse-001"
+curl -X GET "$API_URL/products/PROD-12345678?warehouseId=WH-001"
 
 # Update a product
-curl -X PUT "$API_URL/products/PROD-12345?warehouseId=warehouse-001" \
+curl -X PUT "$API_URL/products/PROD-12345678?warehouseId=WH-001" \
   -H "Content-Type: application/json" \
   -d '{
-    "stock_level": 200,
-    "reorder_threshold": 50
+    "stock_level": 150,
+    "reorder_threshold": 30
   }'
 
 # Delete a product
-curl -X DELETE "$API_URL/products/PROD-12345?warehouseId=warehouse-001"
-```
+curl -X DELETE "$API_URL/products/PROD-12345678?warehouseId=WH-001"
 
-### Warehouse Endpoints
-
-```bash
 # Get all products in a warehouse
-curl -X GET $API_URL/warehouses/warehouse-001/products
-```
+curl -X GET $API_URL/warehouses/WH-001/products
 
-### Transfer Endpoints
-
-```bash
 # Transfer stock between warehouses
 curl -X POST $API_URL/transfers \
   -H "Content-Type: application/json" \
   -d '{
-    "product_id": "PROD-12345",
-    "from_warehouse": "warehouse-001",
-    "to_warehouse": "warehouse-002",
-    "quantity": 10
+    "product_id": "PROD-12345678",
+    "from_warehouse": "WH-001",
+    "to_warehouse": "WH-002",
+    "quantity": 50
   }'
 ```
 
-### Orders Endpoints
+#### Order Endpoints
 
 ```bash
 # Get all orders
 curl -X GET $API_URL/orders
 
+# Get orders by status
+curl -X GET "$API_URL/orders?status=Pending"
+
 # Create a new order
 curl -X POST $API_URL/orders \
   -H "Content-Type: application/json" \
   -d '{
-    "product_id": "PROD-12345",
-    "warehouse_id": "warehouse-001",
-    "quantity": 5,
+    "product_id": "PROD-12345678",
+    "warehouse_id": "WH-001",
+    "quantity": 25,
     "status": "Pending"
+  }'
+```
+
+#### Forecast Endpoints
+
+```bash
+# Get forecast data for a product
+curl -X GET $API_URL/forecast/PROD-12345678
+
+# Get AI-generated forecast summary
+curl -X POST $API_URL/forecast/PROD-12345678/summary \
+  -H "Content-Type: application/json" \
+  -d '{
+    "product_name": "Chocolate Chip Cookies"
   }'
 ```

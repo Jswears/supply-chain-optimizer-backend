@@ -30,6 +30,9 @@ Resources:
       - TransferMethodPOST
       - OrdersMethodGET
       - OrdersMethodPOST
+      - OrderMethodGET
+      - OrderMethodPUT
+      - OrderMethodDelete
       - PredictMethodGET
     Properties:
       RestApiId: !Ref ChainOptApi
@@ -469,7 +472,114 @@ Resources:
             method.response.header.Access-Control-Allow-Methods: true
 
 ######################################################
-# 6) /predict/{productId} Resource
+# 6) /orders/{orderId} Resource
+######################################################
+  OrderResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref OrdersResource
+      PathPart: "{orderId}"
+      RestApiId: !Ref ChainOptApi
+
+# GET /orders/{orderId} Method
+  OrderMethodGET:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: GET
+      ResourceId: !Ref OrderResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-orders-get-order-function-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 200
+
+# UPDATE /orders/{orderId} Method
+  OrderMethodPUT:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: PUT
+      ResourceId: !Ref OrderResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-orders-update-order-function-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 200
+
+# DELETE /orders/{orderId} Method
+  OrderMethodDelete:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: DELETE
+      ResourceId: !Ref OrderResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-orders-delete-order-function-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 204
+
+# OPTIONS /orders/{orderId} Method for CORS support
+  OrderMethodOPTIONS:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: OPTIONS
+      ResourceId: !Ref OrderResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        PassthroughBehavior: NEVER
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET,PUT,DELETE'"
+            ResponseTemplates:
+              application/json: ""
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+
+######################################################
+# 7) /predict/{productId} Resource
 ######################################################
   PredictResource:
     Type: AWS::ApiGateway::Resource
@@ -692,6 +802,36 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
 
+# GetOrder Lambda Permission
+  GetOrderLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "chainopt-orders-get-order-function-arn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
+
+# UpdateOrder Lambda Permission
+  UpdateOrderLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "chainopt-orders-update-order-function-arn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
+
+# DeleteOrder Lambda Permission
+  DeleteOrderLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "chainopt-orders-delete-order-function-arn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
+
 ######################################################
 # Lambda Permissions for Prediction Functions
 ######################################################
@@ -701,6 +841,16 @@ Resources:
     Properties:
       FunctionName: !ImportValue
         Fn::Sub: "chainopt-forecast-prediction-function-arn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
+
+# PredictionSummary Lambda Permission
+  PredictionSummaryLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "chainopt-forecast-prediction-summary-function-arn-${Environment}"
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
