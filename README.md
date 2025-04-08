@@ -5,23 +5,23 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
 [![AWS Serverless](https://img.shields.io/badge/AWS-Serverless-orange.svg)](https://aws.amazon.com/serverless/)
 
-A robust cloud-based inventory optimization system utilizing AI forecasting to enhance supply chain efficiency for eCommerce businesses, warehouses, and retailers.
+**ChainOpt** is a cloud-native inventory optimization platform leveraging AI forecasting to elevate supply chain efficiency for eCommerce businesses, warehouses, and retailers.
 
-**ChainOpt brings enterprise-grade supply chain management to businesses of all sizes with AI-powered forecasting, real-time inventory tracking, and smart order management.**
+> **Enterprise-grade supply chain management for businesses of all sizes — powered by AI forecasting, real-time inventory tracking, and intelligent order workflows.**
 
-[API Documentation](./docs/API.md) | [Deployment Guide](./infrastructure/templates/deployment-guide.md) | [Contributing Guide](./CONTRIBUTING.md)
+📄 [API Documentation](./docs/API.md) | 🚀 [Deployment Guide](./infrastructure/templates/deployment-guide.md) | 🤝 [Contributing Guide](./CONTRIBUTING.md)
 
 ---
 
 ## 🔑 Key Features
 
-- **Real-time Inventory Management** — Track stock levels across multiple warehouses
-- **Intelligent Order Processing** — Streamline purchasing and fulfillment workflows
-- **AI-Powered Demand Forecasting** — Predict future inventory needs with machine learning
-- **Smart Stock Alerts** — Receive notifications when inventory reaches reorder thresholds
-- **Warehouse Transfer Management** — Move inventory between locations with full tracking
-- **AI-Generated Insights** — Get actionable recommendations via OpenAI integration
-- **RESTful API** — Integrate with existing systems and frontends
+- **Real-time Inventory Management** — Track stock across multiple warehouses
+- **Intelligent Order Processing** — Streamline purchase and fulfillment workflows
+- **AI-Powered Demand Forecasting** — Predict future demand using machine learning
+- **Smart Stock Alerts** — Get notified when inventory reaches reorder thresholds
+- **Warehouse Transfers** — Manage inventory movement between locations
+- **AI-Generated Insights** — Actionable recommendations via OpenAI
+- **RESTful API** — Integrate seamlessly with frontends or other systems
 
 ---
 
@@ -29,42 +29,80 @@ A robust cloud-based inventory optimization system utilizing AI forecasting to e
 
 ### Backend
 
-- Node.js (TypeScript) on AWS Lambda for scalable, event-driven processing
-- Serverless architecture for cost optimization and automatic scaling
-- REST APIs with API Gateway for unified endpoint management
+- **Node.js (TypeScript)** — Written with TypeScript for safety and clarity
+- **AWS Lambda** — Scalable, event-driven compute
+- **Serverless Architecture** — Cost-effective and autoscaling
+- **API Gateway** — Unified, secured REST API layer
 
 ### Databases
 
-- DynamoDB (NoSQL) for high-performance inventory and product data storage
-- PostgreSQL (AWS RDS) for relational order data with ACID compliance
+- **DynamoDB** — High-performance NoSQL for inventory and warehouse data
+- **PostgreSQL (RDS)** — Relational database for order transactions
 
 ### AWS Services
 
-- Lambda: Serverless compute for all business logic
-- API Gateway: Centralized API management with authentication
-- DynamoDB: Scalable NoSQL database for inventory
-- RDS: Managed PostgreSQL for transactional order data
-- S3: Object storage for forecast data and Lambda artifacts
-- Secrets Manager: Secure credential storage for database connections
-- CloudWatch: Comprehensive monitoring and logging
+- **Lambda** — Business logic execution
+- **API Gateway** — API routing, throttling, and auth
+- **DynamoDB** — NoSQL storage for product and warehouse data
+- **RDS (PostgreSQL)** — Managed relational database for orders
+- **S3** — Forecast model storage and Lambda artifacts
+- **Secrets Manager** — Securely store DB credentials
+- **CloudWatch** — Monitoring and logging
 
-### AI & ML Integration
+### AI & ML
 
-- AWS S3 for storing forecast data and model outputs
-- SageMaker Canvas for ML model training and faster development
-- OpenAI for generating natural language forecast summaries
+- **S3** — Stores training data and forecast outputs
+- **SageMaker Canvas** — ML model building and tuning
+- **OpenAI** — Generates natural language insights and summaries
 
 ---
 
 ## ✅ Core Services
 
-| Service                | Description                                              | Implementation        |
-|------------------------|----------------------------------------------------------|----------------------|
-| Inventory Service      | Tracks products, warehouses, and stock levels in real-time | Lambda + DynamoDB     |
-| Order Management       | Handles sales/restocking orders with status tracking     | Lambda + RDS (PostgreSQL) |
-| Forecasting Service    | Provides data-driven demand forecasts with confidence intervals | Lambda + S3          |
-| AI Insights Service    | Generates business insights and recommendations via OpenAI | Lambda + OpenAI      |
-| Notification Service   | Alerts stakeholders about low stock and order status changes | Lambda + SNS        |
+| Service | Description | Implementation |
+|---------|-------------|----------------|
+| **Inventory Service** | Manages real-time tracking of products, warehouses, and stock levels | AWS Lambda + DynamoDB |
+| **Order Management** | Processes sales/restocking orders and tracks status | AWS Lambda + RDS (PostgreSQL) |
+| **Forecasting Service** | Provides demand forecasting using ML models | AWS Lambda + S3 |
+| **AI Insights Service** | Uses OpenAI to generate forecasts and strategic insights | AWS Lambda + OpenAI API |
+| **Notification Service** | Sends alerts for low stock and order status changes | AWS Lambda + Amazon SNS |
+
+---
+
+## 📚 API Documentation
+
+ChainOpt offers a comprehensive REST API. Below is a summary of available endpoints:
+
+### 📦 Inventory Service
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/products` | List all products with pagination |
+| GET | `/products/{id}` | Get details for a specific product |
+| POST | `/products` | Create a new product |
+| PUT | `/products/{id}` | Update an existing product |
+| DELETE | `/products/{id}` | Delete a product |
+| GET | `/warehouses/{id}/products` | List products in a specific warehouse |
+| POST | `/transfers` | Transfer stock between warehouses |
+
+### 📑 Order Management
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/orders` | List all orders (filterable by status) |
+| POST | `/orders` | Create a new order |
+| GET | `/orders/{id}` | Get details of a specific order |
+| PUT | `/orders/{id}` | Update an order |
+| DELETE | `/orders/{id}` | Delete an order |
+
+### 📈 Forecasting Service
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/forecast/{productId}` | Get demand forecast data for a product |
+| POST | `/forecast/{productId}/summary` | Generate AI-powered forecast summary and recommendations |
+
+> For complete request/response formats and usage examples, see the [API Documentation](./docs/API.md).
 
 ---
 
@@ -72,9 +110,9 @@ A robust cloud-based inventory optimization system utilizing AI forecasting to e
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v22 or later)
-- [AWS CLI](https://aws.amazon.com/cli/) configured with appropriate credentials
-- [esbuild](https://esbuild.github.io/) for bundling Lambda functions
+- [Node.js](https://nodejs.org/) (v22+)
+- [AWS CLI](https://aws.amazon.com/cli/) configured with credentials
+- [esbuild](https://esbuild.github.io/) for fast bundling
 
 ### Clone the Repository
 
@@ -89,11 +127,11 @@ cd supply-chain-optimizer-backend
 npm install
 ```
 
-### Configure Environment Variables
+### Configure Environment
 
 ```bash
 cp .env.example .env
-# Edit .env with your configuration values
+# Edit .env with your environment-specific values
 ```
 
 ### Build the Project
@@ -102,179 +140,137 @@ cp .env.example .env
 npx tsx esbuild.config.ts
 ```
 
-This will:
-- Compile TypeScript to JavaScript
-- Bundle dependencies with esbuild
-- Create deployment packages in `infrastructure/build/`
+> This compiles TypeScript, bundles dependencies, and generates deployable packages in `infrastructure/build/`.
 
+---
 
 ## 🚢 Deployment
 
-ChainOpt is designed for deployment on AWS. Two deployment methods are available:
+ChainOpt is designed for deployment on AWS using two approaches:
 
 ### 1. Automated Deployment (Recommended)
 
 ```bash
-# Set environment variables
-export ENVIRONMENT=dev  # Can be dev, staging, or prod
+export ENVIRONMENT=dev       # or staging / prod
 export REGION=eu-central-1
 export S3_BUCKET=chainopt-cf-artifacts
 
-# Run the deployment script
 cd infrastructure/scripts
 ./deploy-script.sh
 ```
 
-The script provides an interactive menu to deploy all components or select specific services.
+> Interactive CLI allows full or partial deployment.
 
 ### 2. Manual Deployment
 
-For more control, deploy individual components:
+Deploy components individually for more control:
 
-1. Infrastructure (VPC, subnets, security groups)
-2. IAM roles and permissions
-3. DynamoDB tables for inventory
-4. RDS PostgreSQL for orders
-5. Lambda functions for business logic
-6. API Gateway for unified API access
+1. Networking (VPC, subnets)
+2. IAM roles and policies
+3. DynamoDB tables
+4. RDS PostgreSQL setup
+5. Lambda functions
+6. API Gateway
 
-Detailed step-by-step instructions are available in our [Deployment Guide](./infrastructure/templates/deployment-guide.md).
-
----
-
-## 📚 API Documentation
-
-ChainOpt provides a comprehensive REST API. Here's a summary of available endpoints:
-
-### Inventory Service Endpoints
-
-| Method | Endpoint                          | Description                                          |
-|--------|-----------------------------------|------------------------------------------------------|
-| GET    | `/products`                       | List all products with pagination                    |
-| GET    | `/products/{id}`                  | Get details for a specific product                   |
-| POST   | `/products`                       | Create a new product                                 |
-| PUT    | `/products/{id}`                  | Update an existing product                           |
-| DELETE | `/products/{id}`                  | Delete a product                                     |
-| GET    | `/warehouses/{id}/products`       | Get all products in a warehouse                      |
-| POST   | `/transfers`                      | Transfer stock between warehouses                    |
-
-### Order Service Endpoints
-
-| Method | Endpoint                          | Description                                          |
-|--------|-----------------------------------|------------------------------------------------------|
-| GET    | `/orders`                         | List all orders with status filtering               |
-| POST   | `/orders`                         | Create a new order                                  |
-| GET    | `/orders/{id}`                    | Get details for a specific order                    |
-| PUT    | `/orders/{id}`                    | Update an existing order                            |
-| DELETE | `/orders/{id}`                    | Delete an order                                     |
-
-### Forecast Service Endpoints
-
-| Method | Endpoint                          | Description                                          |
-|--------|-----------------------------------|------------------------------------------------------|
-| GET    | `/forecast/{productId}`           | Get forecast data for a product                      |
-| POST   | `/forecast/{productId}/summary`   | Get AI-generated forecast summary with recommendations |
-
-For complete API documentation, request/response formats, and examples, see our [API Documentation](./docs/API.md).
+See the [Deployment Guide](./infrastructure/templates/deployment-guide.md) for details.
 
 ---
 
 ## 🔍 Monitoring and Maintenance
 
-ChainOpt provides several tools for monitoring and maintaining your deployment:
+### Logging
 
-### CloudWatch Logs
+All Lambdas output structured logs to **CloudWatch**.
 
-All Lambda functions output structured logs to CloudWatch for troubleshooting:
+### Updating Functions
 
-
-### Updating Lambda Functions
-
-After making code changes:
+After making changes:
 
 ```bash
-# Build with esbuild
 npx tsx esbuild.config.ts
-# Or use the deploy script
-npx tsx infrastructure/scripts/deploy-script.ts
-```
-
-# Deploy the updated function
 cd infrastructure/scripts
 ./deploy-script.sh
 ```
 
 ### Database Maintenance
 
-- **RDS Backups** - Automatic backups are managed by AWS RDS
-- **DynamoDB** - Consider enabling point-in-time recovery for important tables
+- **RDS:** Automatic backups enabled by AWS
+- **DynamoDB:** Enable point-in-time recovery for critical tables
 
 ---
 
-## 🛠️ Development
+## 🧱 Project Structure
 
-### Project Structure
 ```
 supply-chain-optimizer-backend/
-├── src/                  # Source code
-│   ├── services/         # Lambda function handlers by service
-│   │   ├── inventory/    # Inventory management functions
-│   │   ├── orders/       # Order management functions
-│   │   └── forecast/     # Forecasting functions
-│   ├── types/            # TypeScript type definitions
+├── src/
+│   ├── services/         # Lambda handlers by domain
+│   │   ├── inventory/
+│   │   ├── orders/
+│   │   └── forecast/
+│   ├── types/            # TypeScript interfaces and types
 │   └── utils/            # Shared utilities
-│       ├── validators/   # Input validation schemas
-│       ├── dynamodb.ts   # DynamoDB utilities
-│       ├── postgresDb.ts # PostgreSQL utilities
-│       ├── response.ts   # API response formatting
-│       └── logger.ts     # Structured logging
-├── infrastructure/       # Infrastructure as Code and deployment artifacts
-│   ├── build/            # Built Lambda packages
-│   ├── scripts/          # Deployment and maintenance scripts
+│       ├── validators/   # Input validation
+│       ├── dynamodb.ts
+│       ├── postgresDb.ts
+│       ├── response.ts
+│       └── logger.ts
+├── infrastructure/
+│   ├── build/            # Compiled deployment packages
+│   ├── scripts/          # Deploy scripts
 │   └── templates/        # CloudFormation templates
-├── docs/                 # Documentation
-├── dist/                 # Compiled code
+├── docs/                 # API and dev docs
+├── dist/                 # Output from build
 └── esbuild.config.ts     # Build configuration
 ```
 
-### Development Workflow
+---
+
+## 💻 Development Workflow
 
 1. Create a feature branch from `dev`
-2. Make changes following the coding standards
+2. Make your changes following code standards
 3. Build and test locally
-4. Submit a PR to the `dev` branch
+4. Open a Pull Request to `dev`
 
 ---
 
 ## 🔮 Roadmap
 
-Future improvements planned for ChainOpt:
+Planned improvements for ChainOpt:
 
-- Implement multi-tenant architecture for SaaS deployment
-- Add GraphQL API support alongside REST
-- Enhance ML models with more sophisticated prediction algorithms
-- Build a dashboard for visualizing forecast data
-- Implement full CI/CD pipeline with automated testing
-- Add webhook support for integration with third-party systems
-- Implement Dashboard section to receive the emails from vendors and suppliers and with help of OpenAI generate the emails to send to them to accept the orders, negotiate prices and cancel them with one click.
-- Add support for multiple currencies and languages
-
+- Multi-tenant support (SaaS architecture)
+- GraphQL API alongside REST
+- Enhanced ML models for complex forecasts
+- Admin dashboard with forecast visualizations
+- Full CI/CD pipeline
+- Webhook support for integrations
+- Smart vendor email assistant (OpenAI-powered) for accepting/negotiating/canceling orders
+- Multi-language and multi-currency support
 
 ---
 
+## Frontend
+The frontend for ChainOpt is available in a separate repository:
+**Frontend**: [ChainOpt Frontend](https://github.com/Jswears/supply-chain-optimizer-frontend)
+
+
+
 ## 🤝 Contributing
 
-We welcome contributions to ChainOpt! Please read our [Contributing Guide](./CONTRIBUTING.md) for details on our code of conduct, development workflow, and the process for submitting pull requests.
+We welcome contributions! Check out the [Contributing Guide](./CONTRIBUTING.md) to get started.
+
+---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+Licensed under the [MIT License](./LICENSE).
 
 ---
 
 ## 👥 Contact
 
 - **Author:** Joaquin Swears Salinas
-- **GitHub:** [Jswears](https://github.com/Jswears)
+- **GitHub:** [@Jswears](https://github.com/Jswears)
 
-For questions or feedback, please open an issue on GitHub.
+For questions or suggestions, please [open an issue](https://github.com/Jswears/supply-chain-optimizer-backend/issues).
