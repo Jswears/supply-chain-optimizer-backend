@@ -26,7 +26,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       Limit: limit,
       ExclusiveStartKey: lastEvaluatedKey,
       ProjectionExpression:
-        'product_id, product_name, stock_level, warehouse_id, category, supplier',
+        'product_id, product_name, stock_level, reorder_threshold, warehouse_id, category, supplier',
     });
 
     if (!result.Items || result.Items.length === 0) {

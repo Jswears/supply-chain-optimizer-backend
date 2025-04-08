@@ -17,8 +17,10 @@ export const handler: Handler = async () => {
       CREATE TABLE IF NOT EXISTS orders (
         order_id UUID PRIMARY KEY,
         product_id TEXT NOT NULL,
+        supplier TEXT,
+        product_name TEXT,
         quantity INTEGER NOT NULL,
-        status VARCHAR(20) NOT NULL CHECK (status IN ('Pending', 'Completed', 'Cancelled')),
+        status VARCHAR(20) NOT NULL CHECK (status IN ('Pending', 'Processing', 'Completed', 'Cancelled')),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `;

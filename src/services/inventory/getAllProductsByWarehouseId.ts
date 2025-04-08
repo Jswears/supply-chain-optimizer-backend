@@ -39,7 +39,9 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       ExpressionAttributeValues: {
         ':warehouse_id': warehouseId,
       },
-      ProjectionExpression: 'product_id, product_name, stock_level',
+      ProjectionExpression:
+        'product_id, product_name, stock_level, reorder_threshold, warehouse_id, category, supplier',
+
       Limit: limit,
       ExclusiveStartKey: lastEvaluatedKey,
     });

@@ -26,6 +26,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     const data = JSON.parse(event.body);
+    logger.log('info', 'Parsed order data', { data, correlationId });
 
     const order = validateInput(orderSchema, data);
     const orderId = uuidv4();
@@ -44,13 +45,33 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     await query(
-      'INSERT INTO orders (order_id, product_id, quantity, status) VALUES ($1, $2, $3, $4)',
-      [orderId, order.product_id, order.quantity, order.status],
+      'INSERT INTO orders (order_id, product_id, quantity, status, supplier, product_name) VALUES ($1, $2, $3, $4, $5, $6)',
+      [orderId, order.product_id, order.quantity, order.status, order.supplier, order.product_name],
     );
 
     if (order.status === 'Completed') {
       const product = productResult.Item;
-      const newStockLevel = Math.max(0, (product.stock_level || 0) - order.quantity);
+
+      logger.log('info', 'Processing completed order for stock update', {
+        orderType: 'Supply Order',
+        currentStockLevel: product.stock_level || 0,
+        orderQuantity: order.quantity,
+        operation: 'INCREASE',
+        correlationId,
+      });
+
+      // IMPORTANT: For a supply/purchase order (createOrder), we INCREASE the stock level
+      const currentStock = product.stock_level || 0;
+      const orderQuantity = order.quantity;
+      const newStockLevel = currentStock + orderQuantity; // Explicitly ADD to increase stock
+
+      logger.log('info', 'Calculated new stock level', {
+        currentStock,
+        orderQuantity,
+        newStockLevel,
+        operation: 'INCREASE',
+        correlationId,
+      });
 
       await dynamoDb.update({
         TableName: INVENTORY_TABLE_NAME,
@@ -65,14 +86,14 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         ReturnValues: 'UPDATED_NEW',
       });
 
-      if (newStockLevel <= product.reorder_threshold) {
-        logger.log('warn', 'Stock level below threshold after update', {
-          product_id: order.product_id,
-          newStockLevel,
-          reorder_threshold: product.reorder_threshold,
-          correlationId,
-        });
-      }
+      logger.log('info', 'Stock level updated after completed supply order', {
+        product_id: order.product_id,
+        warehouse_id: order.warehouse_id,
+        previousStockLevel: product.stock_level || 0,
+        newStockLevel,
+        operation: 'INCREASE',
+        correlationId,
+      });
     }
 
     return successResponse({

@@ -97,7 +97,12 @@ Write a clear 2–3 sentence **executive summary** describing:
 Use this format for each day (numbers should be rounded):
 Date: predicted=X, range=(Y-Z)
 
-Format your response professionally.
+Return the response in the following JSON format:
+{
+  "text": "Your executive summary here.",
+  "trend": "up | down | stable",
+  "alert": true | false
+}
 
 ${forecastText}
 `;
@@ -111,16 +116,36 @@ ${forecastText}
           { role: 'user', content: prompt },
         ],
         temperature: 0.7,
-        max_tokens: 150,
+        max_tokens: 200,
       });
 
-      const summary = completion.choices[0]?.message.content ?? 'No summary generated.';
-      logger.log('info', 'Generated forecast summary', { productId, summary, correlationId });
-
-      return successResponse({
-        message: 'Forecast summary generated',
-        data: { product_id: productId, summary },
+      const response = completion.choices[0]?.message.content;
+      logger.log('info', 'Generated structured forecast response', {
+        productId,
+        response,
+        correlationId,
       });
+
+      try {
+        if (!response) {
+          throw new Error('Response from OpenAI is null');
+        }
+
+        // Strip code block delimiters if present
+        const cleanedResponse = response.replace(/^```json\s*|```$/g, '');
+
+        const parsedResponse = JSON.parse(cleanedResponse);
+        return successResponse({
+          message: 'Forecast summary generated',
+          data: {
+            product_id: productId,
+            ...parsedResponse,
+          },
+        });
+      } catch (err) {
+        logger.log('error', 'Failed to parse GPT response', { error: err, correlationId });
+        return errorResponse(new Error('Failed to parse GPT response'), 500);
+      }
     } catch (err) {
       logger.log('error', 'Error generating forecast summary', {
         error: err instanceof Error ? err.message : 'Unknown error',

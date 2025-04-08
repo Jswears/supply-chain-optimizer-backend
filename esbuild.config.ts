@@ -11,11 +11,46 @@ fs.rmSync('infrastructure/build', { recursive: true, force: true });
 
 console.log('🔃Building...');
 
+// Get command line arguments - check if a specific function name was provided
+const args = process.argv.slice(2);
+const functionArg = args.find(arg => !arg.startsWith('--'));
+
 const entryPoints = glob.sync('src/services/**/*.ts');
 
+// Filter entry points if a specific function was requested
+function getFilteredEntryPoints(funcName: string | undefined): string[] {
+  if (!funcName) {
+    return entryPoints;
+  }
+
+  const filtered = entryPoints.filter(entry => {
+    const baseName = path.basename(entry, path.extname(entry));
+    return baseName === funcName;
+  });
+
+  if (filtered.length === 0) {
+    console.error(`Error: Function "${funcName}" not found in src/services/**/*.ts`);
+    console.log('Available functions:');
+    entryPoints.forEach(entry => {
+      console.log(`- ${path.basename(entry, path.extname(entry))}`);
+    });
+    process.exit(1);
+  }
+
+  return filtered;
+}
+
 async function buildAndZip() {
+  const filteredEntries = getFilteredEntryPoints(functionArg);
+
+  if (functionArg) {
+    console.log(`Building only the "${functionArg}" function...`);
+  } else {
+    console.log(`Building all ${filteredEntries.length} functions...`);
+  }
+
   await Promise.all(
-    entryPoints.map(async (entry) => {
+    filteredEntries.map(async (entry) => {
       const functionName = path.basename(entry, path.extname(entry));
       const functionDistDir = `dist/${functionName}`;
       fs.mkdirSync(functionDistDir, { recursive: true });
