@@ -198,11 +198,13 @@ npx tsx esbuild.config.ts
 # Or use the deploy script
 npx tsx infrastructure/scripts/deploy-script.ts
 ```
+```bash
 
 # Deploy the updated function
 cd infrastructure/scripts
 ./deploy-script.sh
 ```
+
 
 ### Database Maintenance
 
