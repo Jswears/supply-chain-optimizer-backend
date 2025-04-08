@@ -7,8 +7,14 @@ Parameters:
     Description: 'Deployment environment (dev, staging, prod).'
     AllowedValues: [dev, staging, prod]
     Default: dev
+  CognitoUserPoolId:
+    Type: String
+    Description: 'ID of the Cognito User Pool for API authorization'
 
 Resources:
+#######################################################
+# API Gateway Configuration
+#######################################################
   ChainOptApi:
     Type: AWS::ApiGateway::RestApi
     Properties:
@@ -17,6 +23,16 @@ Resources:
       EndpointConfiguration:
         Types:
           - REGIONAL
+
+  ChainOptCognitoAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    Properties:
+      Name: CognitoAuthorizer
+      Type: COGNITO_USER_POOLS
+      IdentitySource: method.request.header.Authorization
+      ProviderARNs:
+        - !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}"
+      RestApiId: !Ref ChainOptApi
 
   ChainOptApiDeployment:
     Type: AWS::ApiGateway::Deployment
@@ -34,6 +50,15 @@ Resources:
       - OrderMethodPUT
       - OrderMethodDelete
       - PredictMethodGET
+      - PredictSummaryMethodPOST
+      - ProductsMethodOPTIONS
+      - ProductMethodOPTIONS
+      - WarehouseProductsMethodOPTIONS
+      - TransferMethodOPTIONS
+      - OrdersMethodOPTIONS
+      - OrderMethodOPTIONS
+      - PredictMethodOPTIONS
+      - PredictSummaryMethodOPTIONS
     Properties:
       RestApiId: !Ref ChainOptApi
       Description: "Deployment for ChainOpt API"
@@ -77,7 +102,10 @@ Resources:
       HttpMethod: GET
       ResourceId: !Ref ProductsResource
       RestApiId: !Ref ChainOptApi
-      AuthorizationType: NONE
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.querystring.warehouseId: true
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
@@ -100,7 +128,10 @@ Resources:
       HttpMethod: POST
       ResourceId: !Ref ProductsResource
       RestApiId: !Ref ChainOptApi
-      AuthorizationType: NONE
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.querystring.warehouseId: true
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
@@ -161,7 +192,10 @@ Resources:
       HttpMethod: GET
       ResourceId: !Ref ProductResource
       RestApiId: !Ref ChainOptApi
-      AuthorizationType: NONE
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.path.productId: true
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
@@ -184,7 +218,10 @@ Resources:
       HttpMethod: DELETE
       ResourceId: !Ref ProductResource
       RestApiId: !Ref ChainOptApi
-      AuthorizationType: NONE
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.path.productId: true
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
@@ -207,7 +244,10 @@ Resources:
       HttpMethod: PUT
       ResourceId: !Ref ProductResource
       RestApiId: !Ref ChainOptApi
-      AuthorizationType: NONE
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.path.productId: true
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
@@ -282,7 +322,10 @@ Resources:
       HttpMethod: GET
       ResourceId: !Ref WarehouseProductsResource
       RestApiId: !Ref ChainOptApi
-      AuthorizationType: NONE
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.path.warehouseId: true
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
@@ -343,7 +386,10 @@ Resources:
       HttpMethod: POST
       ResourceId: !Ref TransfersResource
       RestApiId: !Ref ChainOptApi
-      AuthorizationType: NONE
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.querystring.warehouseId: false
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
@@ -404,7 +450,10 @@ Resources:
       HttpMethod: GET
       ResourceId: !Ref OrdersResource
       RestApiId: !Ref ChainOptApi
-      AuthorizationType: NONE
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.querystring.warehouseId: false
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
@@ -427,7 +476,10 @@ Resources:
       HttpMethod: POST
       ResourceId: !Ref OrdersResource
       RestApiId: !Ref ChainOptApi
-      AuthorizationType: NONE
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.querystring.warehouseId: false
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
@@ -488,7 +540,11 @@ Resources:
       HttpMethod: GET
       ResourceId: !Ref OrderResource
       RestApiId: !Ref ChainOptApi
-      AuthorizationType: NONE
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.path.orderId: true
+        method.request.querystring.warehouseId: false
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
@@ -511,7 +567,11 @@ Resources:
       HttpMethod: PUT
       ResourceId: !Ref OrderResource
       RestApiId: !Ref ChainOptApi
-      AuthorizationType: NONE
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.path.orderId: true
+        method.request.querystring.warehouseId: false
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
@@ -534,7 +594,11 @@ Resources:
       HttpMethod: DELETE
       ResourceId: !Ref OrderResource
       RestApiId: !Ref ChainOptApi
-      AuthorizationType: NONE
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.path.orderId: true
+        method.request.querystring.warehouseId: false
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
@@ -602,7 +666,11 @@ Resources:
       HttpMethod: GET
       ResourceId: !Ref PredictProductIdResource
       RestApiId: !Ref ChainOptApi
-      AuthorizationType: NONE
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.path.productId: true
+        method.request.querystring.warehouseId: false
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
@@ -647,7 +715,7 @@ Resources:
             method.response.header.Access-Control-Allow-Methods: true
 
 ######################################################
-# 7) /predict/{productId}/summary Resource
+# 8) /predict/{productId}/summary Resource
 ######################################################
   PredictSummaryResource:
     Type: AWS::ApiGateway::Resource
@@ -663,7 +731,11 @@ Resources:
       HttpMethod: POST
       ResourceId: !Ref PredictSummaryResource
       RestApiId: !Ref ChainOptApi
-      AuthorizationType: NONE
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.path.productId: true
+        method.request.querystring.warehouseId: false
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
@@ -678,6 +750,7 @@ Resources:
               - "/invocations"
       MethodResponses:
         - StatusCode: 200
+
 # OPTIONS /predict/{productId}/summary Method for CORS support
   PredictSummaryMethodOPTIONS:
     Type: AWS::ApiGateway::Method

@@ -8,6 +8,27 @@ S3_FORECAST_PREFIX=predictions
 ENVIRONMENT=dev
 REGION=eu-central-1
 
+# Retrieve from .env file if it exists
+if [ -f ".env" ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
+# I need to retrieve LOW_STOCK_TOPIC_ARN, API_BASE_URL, COGNITO_USER_POOL_ID
+if [ -z "$LOW_STOCK_TOPIC_ARN" ]; then
+    echo "Error: LOW_STOCK_TOPIC_ARN is not set. Please set it in the .env file."
+    exit 1
+fi
+
+if [ -z "$API_BASE_URL" ]; then
+    echo "Error: API_BASE_URL is not set. Please set it in the .env file."
+    exit 1
+fi
+
+if [ -z "$COGNITO_USER_POOL_ID" ]; then
+    echo "Error: COGNITO_USER_POOL_ID is not set. Please set it in the .env file."
+    exit 1
+fi
+
+
 # Print header for each step
 print_header() {
   echo ""
@@ -153,7 +174,9 @@ deploy_inventory_lambda() {
         --parameter-overrides \
         Environment=$ENVIRONMENT \
         LambdaCodeBucket=$S3_BUCKET \
-        LambdaCodePrefix=$S3_PREFIX
+        LambdaCodePrefix=$S3_PREFIX \
+        ApiBaseUrl=$API_BASE_URL \
+        LowStockTopicArn=$LOW_STOCK_TOPIC_ARN
 }
 
 deploy_orders_lambda() {
@@ -215,7 +238,8 @@ deploy_api() {
         --template-file infrastructure/templates/api.yaml \
         --stack-name chainopt-api-$ENVIRONMENT-$REGION \
         --capabilities CAPABILITY_NAMED_IAM \
-        --parameter-overrides Environment=$ENVIRONMENT
+        --parameter-overrides Environment=$ENVIRONMENT \
+        CognitoUserPoolId=$COGNITO_USER_POOL_ID
 }
 
 deploy_all() {

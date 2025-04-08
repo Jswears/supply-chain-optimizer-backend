@@ -15,6 +15,13 @@ Parameters:
     Type: String
     Description: 'S3 prefix for Lambda code'
     Default: 'lambdas/'
+  ApiBaseUrL:
+    Type: String
+    Description: 'Base URL for the API'
+    Default: 'https://api.example.com'
+  LowStockTopicArn:
+    Type: String
+    Description: 'ARN of the SNS topic for low stock alerts'
 
 Resources:
   AddProductLambda:
@@ -127,6 +134,25 @@ Resources:
       Environment:
         Variables:
           INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
+
+  LowStockReporterLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "chainopt-inventory-low-stock-reporter-${Environment}"
+      Handler: lowStockReporter.handler
+      Runtime: nodejs22.x
+      Timeout: 10
+      MemorySize: 256
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-low-stock-reporter-role"
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Sub "${LambdaCodePrefix}/lowStockReporter.zip"
+      Environment:
+        Variables:
+          INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
+          API_BASE_URL: !Ref ApiBaseUrL
+          SNS_TOPIC_ARN: !Ref LowStockTopicArn
+
 
 Outputs:
   AddProductLambdaArn:

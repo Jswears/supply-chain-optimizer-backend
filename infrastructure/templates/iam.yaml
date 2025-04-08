@@ -608,6 +608,30 @@ Resources:
                 Action:
                   - 'secretsmanager:GetSecretValue'
                 Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:chainopt-openai-api-key-${Environment}'
+
+  ChainOptLowStockReporterLambda:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'chainopt-${Environment}-low-stock-reporter-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'chainopt-${Environment}-low-stock-reporter-log-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-low-stock-reporter-${Environment}:*'
+
 Outputs:
   ChainOptAddProductLambdaRoleArn:
     Value: !GetAtt ChainOptAddProductLambdaRole.Arn
@@ -673,4 +697,8 @@ Outputs:
     Value: !GetAtt ChainOptForecastPredictionSummaryLambdaRole.Arn
     Export:
       Name: !Sub 'chainopt-${Environment}-forecast-prediction-summary-role-arn'
+  ChainOptLowStockReporterLambdaRole:
+    Value: !GetAtt ChainOptLowStockReporterLambda.Arn
+    Export:
+      Name: !Sub 'chainopt-${Environment}-low-stock-reporter-role-arn'
 
