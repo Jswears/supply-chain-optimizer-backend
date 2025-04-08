@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  Environment:
+    Type: String
+    Description: 'Deployment environment (dev, staging, prod).'
+    AllowedValues: [dev, staging, prod]
+    Default: dev
+  LambdaCodeBucket:
+    Type: String
+    Description: 'S3 bucket for Lambda code'
+    Default: ''
+  LambdaCodePrefix:
+    Type: String
+    Description: 'S3 prefix for Lambda code'
+    Default: 'lambdas/'
+  ForecastCodeBucket:
+    Type: String
+    Description: 'S3 bucket for forecast code'
+    Default: ''
+  ForecastCodePrefix:
+    Type: String
+    Description: 'S3 prefix for forecast code'
+    Default: 'forecast/'
+  FileName:
+    Type: String
+    Description: 'File name for the prediction data'
+    Default: 'forecast_results.csv'
+
+Resources:
+  PredictionFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "chainopt-forecast-prediction-${Environment}"
+      Handler: predict.handler
+      Runtime: nodejs22.x
+      Timeout: 10
+      MemorySize: 256
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-forecast-prediction-role"
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Sub "${LambdaCodePrefix}/predict.zip"
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref ForecastCodeBucket
+          FILE_NAME: !Sub "${ForecastCodePrefix}/${FileName}"
+
+  PredictionSummaryFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "chainopt-forecast-prediction-summary-${Environment}"
+      Handler: predictSummary.handler
+      Runtime: nodejs22.x
+      Timeout: 10
+      MemorySize: 256
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-forecast-prediction-summary-role"
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Sub "${LambdaCodePrefix}/predictSummary.zip"
+      Environment:
+        Variables:
+          SECRET_ID: !Sub chainopt-openai-api-key-${Environment}
+          BUCKET_NAME: !Ref ForecastCodeBucket
+          FILE_NAME: !Sub "${ForecastCodePrefix}/${FileName}"
+
+Outputs:
+  PredictionFunctionArn:
+    Value: !GetAtt PredictionFunction.Arn
+    Export:
+      Name: !Sub "chainopt-forecast-prediction-function-arn-${Environment}"
+  PredictionSummaryFunctionArn:
+    Value: !GetAtt PredictionSummaryFunction.Arn
+    Export:
+      Name: !Sub "chainopt-forecast-prediction-summary-function-arn-${Environment}"

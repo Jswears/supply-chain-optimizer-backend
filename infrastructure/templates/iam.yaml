@@ -1,0 +1,704 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'IAM roles and policies for ChainOpt Inventory.'
+
+Parameters:
+  Environment:
+    Type: String
+    Description: 'Deployment environment (dev, staging, prod).'
+    AllowedValues: [dev, staging, prod]
+    Default: dev
+  ForecastCodeBucket:
+    Type: String
+    Description: 'S3 bucket for forecast code'
+    Default: ''
+
+Resources:
+  ChainOptAddProductLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'chainopt-${Environment}-add-product-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'chainopt-${Environment}-add-product-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:PutItem'
+                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ChainOptInventory-${Environment}'
+        - PolicyName: !Sub 'chainopt-${Environment}-add-product-log-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-inventory-add-product-${Environment}:*'
+
+  ChainOptGetAllProductsLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'chainopt-${Environment}-get-all-products-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'chainopt-${Environment}-get-all-products-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:Scan'
+                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ChainOptInventory-${Environment}'
+        - PolicyName: !Sub 'chainopt-${Environment}-get-all-products-log-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-inventory-get-all-products-${Environment}:*'
+
+  ChainOptGetProductLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'chainopt-${Environment}-get-product-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'chainopt-${Environment}-get-product-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:GetItem'
+                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ChainOptInventory-${Environment}'
+        - PolicyName: !Sub 'chainopt-${Environment}-get-product-log-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-inventory-get-product-${Environment}:*'
+
+  ChainOptGetAllProductsByWarehouseIdLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'chainopt-${Environment}-get-all-products-by-warehouse-id-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'chainopt-${Environment}-get-all-products-by-warehouse-id-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:Query'
+                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ChainOptInventory-${Environment}/index/GSI-Warehouse'
+        - PolicyName: !Sub 'chainopt-${Environment}-get-all-products-by-warehouse-id-log-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-inventory-get-all-products-by-warehouse-id-${Environment}:*'
+
+  ChainOptDeleteProductLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'chainopt-${Environment}-delete-product-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'chainopt-${Environment}-delete-product-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:DeleteItem'
+                  - 'dynamodb:GetItem'
+                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ChainOptInventory-${Environment}'
+        - PolicyName: !Sub 'chainopt-${Environment}-delete-product-log-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-inventory-delete-product-${Environment}:*'
+
+  ChainOptUpdateProductLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'chainopt-${Environment}-update-product-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'chainopt-${Environment}-update-product-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:UpdateItem'
+                  - 'dynamodb:GetItem'
+                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ChainOptInventory-${Environment}'
+        - PolicyName: !Sub 'chainopt-${Environment}-update-product-log-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-inventory-update-product-${Environment}:*'
+
+  ChainOptTransferProductLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'chainopt-${Environment}-transfer-product-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'chainopt-${Environment}-transfer-product-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:GetItem'
+                  - 'dynamodb:PutItem'
+                  - 'dynamodb:UpdateItem'
+                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ChainOptInventory-${Environment}'
+        - PolicyName: !Sub 'chainopt-${Environment}-transfer-product-log-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-inventory-transfer-product-${Environment}:*'
+
+# Orders
+  ChainOptInitializeDBLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'chainopt-${Environment}-initialize-db-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'chainopt-${Environment}-initialize-db-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'secretsmanager:GetSecretValue'
+                  - 'secretsmanager:PutSecretValue'
+                  - 'secretsmanager:UpdateSecret'
+                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:ChainOptRDSCredentials-${Environment}-*'
+        - PolicyName: "AllowLambdaVpcNetworking"
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ec2:CreateNetworkInterface'
+                  - 'ec2:DescribeNetworkInterfaces'
+                  - 'ec2:DeleteNetworkInterface'
+                Resource: '*'
+        - PolicyName: 'DescribeRDSPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'rds:DescribeDBInstances'
+                  - 'rds:DescribeDBClusters'
+                Resource: '*'
+        - PolicyName: !Sub 'chainopt-${Environment}-initialize-db-log-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-orders-initialize-db-${Environment}:*'
+
+  ChainOptUpdateSecretLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'chainopt-${Environment}-update-secret-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'chainopt-${Environment}-update-secret-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'secretsmanager:GetSecretValue'
+                  - 'secretsmanager:PutSecretValue'
+                  - 'secretsmanager:UpdateSecret'
+                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:ChainOptRDSCredentials-${Environment}-*'
+        - PolicyName: "AllowLambdaVpcNetworking"
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ec2:CreateNetworkInterface'
+                  - 'ec2:DescribeNetworkInterfaces'
+                  - 'ec2:DeleteNetworkInterface'
+                Resource: '*'
+        - PolicyName: !Sub 'chainopt-${Environment}-update-secret-log-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-orders-update-secret-${Environment}:*'
+
+  ChainOptCreateOrderLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'chainopt-${Environment}-create-order-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'chainopt-${Environment}-create-order-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'rds:DescribeDBInstances'
+                  - 'rds:DescribeDBClusters'
+                  - 'rds:ExecuteStatement'
+                  - 'rds:BatchExecuteStatement'
+                  - 'dynamodb:GetItem'
+                  - 'dynamodb:UpdateItem'
+                  - 'secretsmanager:GetSecretValue'
+                Resource:
+                  - '*'
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ChainOptOrders-${Environment}'
+        - PolicyName: "AllowLambdaVpcNetworking"
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ec2:CreateNetworkInterface'
+                  - 'ec2:DescribeNetworkInterfaces'
+                  - 'ec2:DeleteNetworkInterface'
+                Resource: '*'
+        - PolicyName: !Sub 'chainopt-${Environment}-create-order-log-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-orders-create-order-${Environment}:*'
+
+  ChainOptGetOrdersLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'chainopt-${Environment}-get-orders-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: "AllowLambdaVpcNetworking"
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ec2:CreateNetworkInterface'
+                  - 'ec2:DescribeNetworkInterfaces'
+                  - 'ec2:DeleteNetworkInterface'
+                Resource: '*'
+        - PolicyName: !Sub 'chainopt-${Environment}-get-orders-log-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-orders-get-orders-${Environment}:*'
+
+  ChainOptGetOrderLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'chainopt-${Environment}-get-order-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: "AllowLambdaVpcNetworking"
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ec2:CreateNetworkInterface'
+                  - 'ec2:DescribeNetworkInterfaces'
+                  - 'ec2:DeleteNetworkInterface'
+                Resource: '*'
+        - PolicyName: !Sub 'chainopt-${Environment}-get-order-log-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-orders-get-order-${Environment}:*'
+
+  ChainOptUpdateOrderLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'chainopt-${Environment}-update-order-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'chainopt-${Environment}-update-order-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'rds:DescribeDBInstances'
+                  - 'rds:DescribeDBClusters'
+                  - 'rds:ExecuteStatement'
+                  - 'rds:BatchExecuteStatement'
+                  - 'dynamodb:GetItem'
+                  - 'dynamodb:UpdateItem'
+                  - 'secretsmanager:GetSecretValue'
+                Resource:
+                  - '*'
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ChainOptOrders-${Environment}'
+        - PolicyName: "AllowLambdaVpcNetworking"
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ec2:CreateNetworkInterface'
+                  - 'ec2:DescribeNetworkInterfaces'
+                  - 'ec2:DeleteNetworkInterface'
+                Resource: '*'
+        - PolicyName: !Sub 'chainopt-${Environment}-update-order-log-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-orders-update-order-${Environment}:*'
+
+  ChainOptDeleteOrderLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'chainopt-${Environment}-delete-order-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: "AllowLambdaVpcNetworking"
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ec2:CreateNetworkInterface'
+                  - 'ec2:DescribeNetworkInterfaces'
+                  - 'ec2:DeleteNetworkInterface'
+                Resource: '*'
+        - PolicyName: !Sub 'chainopt-${Environment}-delete-order-log-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-orders-delete-order-${Environment}:*'
+
+# Forecast
+  ChainOptForecastPredictionLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'chainopt-${Environment}-forecast-prediction-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'chainopt-${Environment}-forecast-prediction-log-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-forecast-prediction-${Environment}:*'
+        - PolicyName: !Sub 'chainopt-${Environment}-forecast-prediction-s3-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:ListBucket'
+                Resource: !Sub 'arn:aws:s3:::${ForecastCodeBucket}'
+              - Effect: Allow
+                Action:
+                  - 's3:GetObject'
+                  - 's3:PutObject'
+                Resource: !Sub 'arn:aws:s3:::${ForecastCodeBucket}/*'
+
+  ChainOptForecastPredictionSummaryLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'chainopt-${Environment}-forecast-prediction-summary-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'chainopt-${Environment}-forecast-prediction-summary-log-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                  - 'logs:DescribeLogStreams'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-forecast-prediction-summary-${Environment}:*'
+        - PolicyName: !Sub 'chainopt-${Environment}-forecast-prediction-summary-s3-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:ListBucket'
+                Resource: !Sub 'arn:aws:s3:::${ForecastCodeBucket}'
+              - Effect: Allow
+                Action:
+                  - 's3:GetObject'
+                  - 's3:PutObject'
+                Resource: !Sub 'arn:aws:s3:::${ForecastCodeBucket}/*'
+        - PolicyName: !Sub 'chainopt-${Environment}-forecast-prediction-summary-secrets-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'secretsmanager:GetSecretValue'
+                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:chainopt-openai-api-key-${Environment}'
+
+  ChainOptLowStockReporterLambda:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'chainopt-${Environment}-low-stock-reporter-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'chainopt-${Environment}-low-stock-reporter-log-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/chainopt-low-stock-reporter-${Environment}:*'
+
+Outputs:
+  ChainOptAddProductLambdaRoleArn:
+    Value: !GetAtt ChainOptAddProductLambdaRole.Arn
+    Export:
+      Name: !Sub 'chainopt-${Environment}-add-product-role-arn'
+  ChainOptGetAllProductsLambdaRoleArn:
+    Value: !GetAtt ChainOptGetAllProductsLambdaRole.Arn
+    Export:
+      Name: !Sub 'chainopt-${Environment}-get-all-products-role-arn'
+  ChainOptGetProductLambdaRoleArn:
+    Value: !GetAtt ChainOptGetProductLambdaRole.Arn
+    Export:
+      Name: !Sub 'chainopt-${Environment}-get-product-role-arn'
+  ChainOptGetAllProductsByWarehouseIdLambdaRoleArn:
+    Value: !GetAtt ChainOptGetAllProductsByWarehouseIdLambdaRole.Arn
+    Export:
+      Name: !Sub 'chainopt-${Environment}-get-all-products-by-warehouse-id-role-arn'
+  ChainOptDeleteProductLambdaRoleArn:
+    Value: !GetAtt ChainOptDeleteProductLambdaRole.Arn
+    Export:
+      Name: !Sub 'chainopt-${Environment}-delete-product-role-arn'
+  ChainOptUpdateProductLambdaRoleArn:
+    Value: !GetAtt ChainOptUpdateProductLambdaRole.Arn
+    Export:
+      Name: !Sub 'chainopt-${Environment}-update-product-role-arn'
+  ChainOptTransferProductLambdaRoleArn:
+    Value: !GetAtt ChainOptTransferProductLambdaRole.Arn
+    Export:
+      Name: !Sub 'chainopt-${Environment}-transfer-product-role-arn'
+  ChainOptInitializeDBLambdaRoleArn:
+    Value: !GetAtt ChainOptInitializeDBLambdaRole.Arn
+    Export:
+      Name: !Sub 'chainopt-${Environment}-initialize-db-role-arn'
+  ChainOptUpdateSecretLambdaRoleArn:
+    Value: !GetAtt ChainOptUpdateSecretLambdaRole.Arn
+    Export:
+      Name: !Sub 'chainopt-${Environment}-update-secret-role-arn'
+  ChainOptCreateOrderLambdaRoleArn:
+    Value: !GetAtt ChainOptCreateOrderLambdaRole.Arn
+    Export:
+      Name: !Sub 'chainopt-${Environment}-create-order-role-arn'
+  ChainOptGetOrdersLambdaRoleArn:
+    Value: !GetAtt ChainOptGetOrdersLambdaRole.Arn
+    Export:
+      Name: !Sub 'chainopt-${Environment}-get-orders-role-arn'
+  ChainOptGetOrderLambdaRoleArn:
+    Value: !GetAtt ChainOptGetOrderLambdaRole.Arn
+    Export:
+      Name: !Sub 'chainopt-${Environment}-get-order-role-arn'
+  ChainOptUpdateOrderLambdaRoleArn:
+    Value: !GetAtt ChainOptUpdateOrderLambdaRole.Arn
+    Export:
+      Name: !Sub 'chainopt-${Environment}-update-order-role-arn'
+  ChainOptDeleteOrderLambdaRoleArn:
+    Value: !GetAtt ChainOptDeleteOrderLambdaRole.Arn
+    Export:
+      Name: !Sub 'chainopt-${Environment}-delete-order-role-arn'
+  ChainOptForecastPredictionLambdaRoleArn:
+    Value: !GetAtt ChainOptForecastPredictionLambdaRole.Arn
+    Export:
+      Name: !Sub 'chainopt-${Environment}-forecast-prediction-role-arn'
+  ChainOptForecastPredictionSummaryLambdaRole:
+    Value: !GetAtt ChainOptForecastPredictionSummaryLambdaRole.Arn
+    Export:
+      Name: !Sub 'chainopt-${Environment}-forecast-prediction-summary-role-arn'
+  ChainOptLowStockReporterLambdaRole:
+    Value: !GetAtt ChainOptLowStockReporterLambda.Arn
+    Export:
+      Name: !Sub 'chainopt-${Environment}-low-stock-reporter-role-arn'
+

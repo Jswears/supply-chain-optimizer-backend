@@ -1,0 +1,196 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Orders stack with Lambda functions for ChainOpt orders
+
+Parameters:
+  Environment:
+    Type: String
+    Description: 'Deployment environment (dev, staging, prod).'
+    AllowedValues: [dev, staging, prod]
+    Default: dev
+  LambdaCodeBucket:
+    Type: String
+    Description: 'S3 bucket for Lambda code'
+    Default: ''
+  LambdaCodePrefix:
+    Type: String
+    Description: 'S3 prefix for Lambda code'
+    Default: 'lambdas/'
+
+Resources:
+
+  InitializeDBFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "chainopt-orders-initialize-db-${Environment}"
+      Handler: initializeDB.handler
+      Runtime: nodejs22.x
+      Timeout: 10
+      MemorySize: 256
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-initialize-db-role"
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Sub "${LambdaCodePrefix}/initializeDB.zip"
+      Environment:
+        Variables:
+          DB_NAME: orders
+          SECRET_ID: !Sub "ChainOptRDSCredentials-${Environment}"
+      VpcConfig:
+        SecurityGroupIds:
+          - !ImportValue chainopt-lambda-sg
+        SubnetIds: !Split [",", !ImportValue project-chainopt-private-subnets]
+
+  UpdateSecretFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "chainopt-orders-update-secret-${Environment}"
+      Handler: updateSecret.handler
+      Runtime: nodejs22.x
+      Timeout: 10
+      MemorySize: 256
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-update-secret-role"
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Sub "${LambdaCodePrefix}/updateSecret.zip"
+      Environment:
+        Variables:
+          SECRET_ID: !Sub "ChainOptRDSCredentials-${Environment}"
+
+  UpdateSecretCustomResource:
+    Type: Custom::UpdateSecret
+    Properties:
+      ServiceToken: !GetAtt UpdateSecretFunction.Arn
+      DBHost: !ImportValue chainopt-rds-endpoint
+      DBPort: 5432
+
+  CreateOrderFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "chainopt-orders-create-order-${Environment}"
+      Handler: createOrder.handler
+      Runtime: nodejs22.x
+      Timeout: 10
+      MemorySize: 256
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-create-order-role"
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Sub "${LambdaCodePrefix}/createOrder.zip"
+      Environment:
+        Variables:
+          INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
+          SECRET_ID: !Sub "ChainOptRDSCredentials-${Environment}"
+      VpcConfig:
+        SecurityGroupIds:
+          - !ImportValue chainopt-lambda-sg
+        SubnetIds: !Split [",", !ImportValue project-chainopt-private-subnets]
+
+  GetOrdersFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "chainopt-orders-get-orders-${Environment}"
+      Handler: getOrders.handler
+      Runtime: nodejs22.x
+      Timeout: 10
+      MemorySize: 256
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-get-orders-role"
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Sub "${LambdaCodePrefix}/getOrders.zip"
+      Environment:
+        Variables:
+          SECRET_ID: !Sub "ChainOptRDSCredentials-${Environment}"
+          ORDERS_TABLE_NAME: !Sub "ChainOptOrders-${Environment}"
+      VpcConfig:
+        SecurityGroupIds:
+          - !ImportValue chainopt-lambda-sg
+        SubnetIds: !Split [",", !ImportValue project-chainopt-private-subnets]
+
+  GetOrderFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "chainopt-orders-get-order-${Environment}"
+      Handler: getOrder.handler
+      Runtime: nodejs22.x
+      Timeout: 10
+      MemorySize: 256
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-get-order-role"
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Sub "${LambdaCodePrefix}/getOrder.zip"
+      Environment:
+        Variables:
+          SECRET_ID: !Sub "ChainOptRDSCredentials-${Environment}"
+          ORDERS_TABLE_NAME: !Sub "ChainOptOrders-${Environment}"
+      VpcConfig:
+        SecurityGroupIds:
+          - !ImportValue chainopt-lambda-sg
+        SubnetIds: !Split [",", !ImportValue project-chainopt-private-subnets]
+
+  UpdateOrderFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "chainopt-orders-update-order-${Environment}"
+      Handler: updateOrder.handler
+      Runtime: nodejs22.x
+      Timeout: 10
+      MemorySize: 256
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-update-order-role"
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Sub "${LambdaCodePrefix}/updateOrder.zip"
+      Environment:
+        Variables:
+          SECRET_ID: !Sub "ChainOptRDSCredentials-${Environment}"
+          INVENTORY_TABLE_NAME: !Sub "ChainOptInventory-${Environment}"
+      VpcConfig:
+        SecurityGroupIds:
+          - !ImportValue chainopt-lambda-sg
+        SubnetIds: !Split [",", !ImportValue project-chainopt-private-subnets]
+
+  DeleteOrderFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "chainopt-orders-delete-order-${Environment}"
+      Handler: deleteOrder.handler
+      Runtime: nodejs22.x
+      Timeout: 10
+      MemorySize: 256
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/chainopt-${Environment}-delete-order-role"
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Sub "${LambdaCodePrefix}/deleteOrder.zip"
+      Environment:
+        Variables:
+          SECRET_ID: !Sub "ChainOptRDSCredentials-${Environment}"
+          ORDERS_TABLE_NAME: !Sub "ChainOptOrders-${Environment}"
+      VpcConfig:
+        SecurityGroupIds:
+          - !ImportValue chainopt-lambda-sg
+        SubnetIds: !Split [",", !ImportValue project-chainopt-private-subnets]
+
+
+Outputs:
+  CreateOrderFunctionArn:
+    Value: !GetAtt CreateOrderFunction.Arn
+    Export:
+      Name: !Sub "chainopt-orders-create-order-function-arn-${Environment}"
+
+  GetOrdersFunctionArn:
+    Value: !GetAtt GetOrdersFunction.Arn
+    Export:
+      Name: !Sub "chainopt-orders-get-orders-function-arn-${Environment}"
+
+  GetOrderFunctionArn:
+    Value: !GetAtt GetOrderFunction.Arn
+    Export:
+      Name: !Sub "chainopt-orders-get-order-function-arn-${Environment}"
+
+  UpdateOrderFunctionArn:
+    Value: !GetAtt UpdateOrderFunction.Arn
+    Export:
+      Name: !Sub "chainopt-orders-update-order-function-arn-${Environment}"
+
+  DeleteOrderFunctionArn:
+    Value: !GetAtt DeleteOrderFunction.Arn
+    Export:
+      Name: !Sub "chainopt-orders-delete-order-function-arn-${Environment}"

@@ -1,0 +1,936 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: API Gateway for ChainOpt application with unified endpoints for inventory and orders.
+
+Parameters:
+  Environment:
+    Type: String
+    Description: 'Deployment environment (dev, staging, prod).'
+    AllowedValues: [dev, staging, prod]
+    Default: dev
+  CognitoUserPoolId:
+    Type: String
+    Description: 'ID of the Cognito User Pool for API authorization'
+
+Resources:
+#######################################################
+# API Gateway Configuration
+#######################################################
+  ChainOptApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub "ChainOpt-API-${Environment}"
+      Description: "Unified API for ChainOpt Supply Chain Optimization"
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  ChainOptCognitoAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    Properties:
+      Name: CognitoAuthorizer
+      Type: COGNITO_USER_POOLS
+      IdentitySource: method.request.header.Authorization
+      ProviderARNs:
+        - !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}"
+      RestApiId: !Ref ChainOptApi
+
+  ChainOptApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - ProductsMethodGET
+      - ProductsMethodPOST
+      - ProductMethodGET
+      - ProductMethodDelete
+      - ProductMethodPUT
+      - WarehouseProductsMethodGET
+      - TransferMethodPOST
+      - OrdersMethodGET
+      - OrdersMethodPOST
+      - OrderMethodGET
+      - OrderMethodPUT
+      - OrderMethodDelete
+      - PredictMethodGET
+      - PredictSummaryMethodPOST
+      - ProductsMethodOPTIONS
+      - ProductMethodOPTIONS
+      - WarehouseProductsMethodOPTIONS
+      - TransferMethodOPTIONS
+      - OrdersMethodOPTIONS
+      - OrderMethodOPTIONS
+      - PredictMethodOPTIONS
+      - PredictSummaryMethodOPTIONS
+    Properties:
+      RestApiId: !Ref ChainOptApi
+      Description: "Deployment for ChainOpt API"
+
+  ChainOptApiStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      StageName: !Ref Environment
+      DeploymentId: !Ref ChainOptApiDeployment
+      RestApiId: !Ref ChainOptApi
+      Description: "ChainOpt API Stage"
+      AccessLogSetting:
+        DestinationArn: !GetAtt ChainOptApiLogGroup.Arn
+        Format: "$context.identity.sourceIp - $context.requestId [$context.requestTime] $context.httpMethod $context.resourcePath $context.status"
+      MethodSettings:
+        - ResourcePath: "/*"
+          HttpMethod: "*"
+          ThrottlingBurstLimit: 100
+          ThrottlingRateLimit: 50
+
+  ChainOptApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/apigateway/chainopt-api-${Environment}"
+      RetentionInDays: 30
+
+######################################################
+# 1) /products Resource
+######################################################
+  ProductsResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt ChainOptApi.RootResourceId
+      PathPart: products
+      RestApiId: !Ref ChainOptApi
+
+# GET /products Method
+  ProductsMethodGET:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: GET
+      ResourceId: !Ref ProductsResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.querystring.warehouseId: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-inventory-get-all-products-lambda-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 200
+
+# POST /products Method
+  ProductsMethodPOST:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: POST
+      ResourceId: !Ref ProductsResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.querystring.warehouseId: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-inventory-add-product-lambda-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 201
+
+# OPTIONS /products Method for CORS support
+  ProductsMethodOPTIONS:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: OPTIONS
+      ResourceId: !Ref ProductsResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        PassthroughBehavior: NEVER
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET,POST'"
+            ResponseTemplates:
+              application/json: ""
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+
+######################################################
+# 2) /products/{productId} Resource
+######################################################
+  ProductResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref ProductsResource
+      PathPart: "{productId}"
+      RestApiId: !Ref ChainOptApi
+
+# GET /products/{productId} Method
+  ProductMethodGET:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: GET
+      ResourceId: !Ref ProductResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.path.productId: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-inventory-get-product-lambda-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 200
+
+# DELETE /products/{productId} Method
+  ProductMethodDelete:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: DELETE
+      ResourceId: !Ref ProductResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.path.productId: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-inventory-delete-product-lambda-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 204
+
+# PUT /products/{productId}
+  ProductMethodPUT:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: PUT
+      ResourceId: !Ref ProductResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.path.productId: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-inventory-update-product-lambda-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 200
+
+# OPTIONS /products/{productId} Method for CORS support
+  ProductMethodOPTIONS:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: OPTIONS
+      ResourceId: !Ref ProductResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        PassthroughBehavior: NEVER
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET,DELETE,PUT'"
+            ResponseTemplates:
+              application/json: ""
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+
+######################################################
+# 3) /warehouses/{warehouseId}/products Resource
+######################################################
+  WarehousesResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt ChainOptApi.RootResourceId
+      PathPart: warehouses
+      RestApiId: !Ref ChainOptApi
+
+  WarehouseIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref WarehousesResource
+      PathPart: "{warehouseId}"
+      RestApiId: !Ref ChainOptApi
+
+  WarehouseProductsResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref WarehouseIdResource
+      PathPart: products
+      RestApiId: !Ref ChainOptApi
+
+# GET /warehouses/{warehouseId}/products Method
+  WarehouseProductsMethodGET:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: GET
+      ResourceId: !Ref WarehouseProductsResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.path.warehouseId: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-inventory-get-all-products-by-warehouse-id-lambda-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 200
+
+# OPTIONS /warehouses/{warehouseId}/products Method for CORS support
+  WarehouseProductsMethodOPTIONS:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: OPTIONS
+      ResourceId: !Ref WarehouseProductsResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        PassthroughBehavior: NEVER
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET'"
+            ResponseTemplates:
+              application/json: ""
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+
+######################################################
+# 4) /transfers Resource (for product transfers)
+######################################################
+  TransfersResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt ChainOptApi.RootResourceId
+      PathPart: transfers
+      RestApiId: !Ref ChainOptApi
+
+# POST /transfers Method
+  TransferMethodPOST:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: POST
+      ResourceId: !Ref TransfersResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.querystring.warehouseId: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-inventory-transfer-product-lambda-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 200
+
+# OPTIONS /transfers Method for CORS support
+  TransferMethodOPTIONS:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: OPTIONS
+      ResourceId: !Ref TransfersResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        PassthroughBehavior: NEVER
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,POST'"
+            ResponseTemplates:
+              application/json: ""
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+
+######################################################
+# 5) /orders Resource
+######################################################
+  OrdersResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt ChainOptApi.RootResourceId
+      PathPart: orders
+      RestApiId: !Ref ChainOptApi
+
+# GET /orders Method
+  OrdersMethodGET:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: GET
+      ResourceId: !Ref OrdersResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.querystring.warehouseId: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-orders-get-orders-function-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 200
+
+# POST /orders Method
+  OrdersMethodPOST:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: POST
+      ResourceId: !Ref OrdersResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.querystring.warehouseId: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-orders-create-order-function-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 201
+
+# OPTIONS /orders Method for CORS support
+  OrdersMethodOPTIONS:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: OPTIONS
+      ResourceId: !Ref OrdersResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        PassthroughBehavior: NEVER
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET,POST'"
+            ResponseTemplates:
+              application/json: ""
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+
+######################################################
+# 6) /orders/{orderId} Resource
+######################################################
+  OrderResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref OrdersResource
+      PathPart: "{orderId}"
+      RestApiId: !Ref ChainOptApi
+
+# GET /orders/{orderId} Method
+  OrderMethodGET:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: GET
+      ResourceId: !Ref OrderResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.path.orderId: true
+        method.request.querystring.warehouseId: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-orders-get-order-function-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 200
+
+# UPDATE /orders/{orderId} Method
+  OrderMethodPUT:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: PUT
+      ResourceId: !Ref OrderResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.path.orderId: true
+        method.request.querystring.warehouseId: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-orders-update-order-function-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 200
+
+# DELETE /orders/{orderId} Method
+  OrderMethodDelete:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: DELETE
+      ResourceId: !Ref OrderResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.path.orderId: true
+        method.request.querystring.warehouseId: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-orders-delete-order-function-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 204
+
+# OPTIONS /orders/{orderId} Method for CORS support
+  OrderMethodOPTIONS:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: OPTIONS
+      ResourceId: !Ref OrderResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        PassthroughBehavior: NEVER
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET,PUT,DELETE'"
+            ResponseTemplates:
+              application/json: ""
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+
+######################################################
+# 7) /predict/{productId} Resource
+######################################################
+  PredictResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt ChainOptApi.RootResourceId
+      PathPart: predict
+      RestApiId: !Ref ChainOptApi
+
+  PredictProductIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref PredictResource
+      PathPart: "{productId}"
+      RestApiId: !Ref ChainOptApi
+
+# GET /predict/{productId} Method
+  PredictMethodGET:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: GET
+      ResourceId: !Ref PredictProductIdResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.path.productId: true
+        method.request.querystring.warehouseId: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-forecast-prediction-function-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 200
+
+# OPTIONS /predict/{productId} Method for CORS support
+  PredictMethodOPTIONS:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: OPTIONS
+      ResourceId: !Ref PredictProductIdResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        PassthroughBehavior: NEVER
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET'"
+            ResponseTemplates:
+              application/json: ""
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+
+######################################################
+# 8) /predict/{productId}/summary Resource
+######################################################
+  PredictSummaryResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref PredictProductIdResource
+      PathPart: summary
+      RestApiId: !Ref ChainOptApi
+
+# POST /predict/{productId}/summary Method
+  PredictSummaryMethodPOST:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: POST
+      ResourceId: !Ref PredictSummaryResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ChainOptCognitoAuthorizer
+      RequestParameters:
+        method.request.path.productId: true
+        method.request.querystring.warehouseId: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:"
+              - !Ref AWS::Region
+              - ":lambda:path/2015-03-31/functions/"
+              - !ImportValue
+                Fn::Sub: "chainopt-forecast-prediction-summary-function-arn-${Environment}"
+              - "/invocations"
+      MethodResponses:
+        - StatusCode: 200
+
+# OPTIONS /predict/{productId}/summary Method for CORS support
+  PredictSummaryMethodOPTIONS:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: OPTIONS
+      ResourceId: !Ref PredictSummaryResource
+      RestApiId: !Ref ChainOptApi
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        PassthroughBehavior: NEVER
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,POST'"
+            ResponseTemplates:
+              application/json: ""
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+
+######################################################
+# Lambda Permissions for Inventory Functions
+######################################################
+# AddProduct Lambda Permission
+  AddProductLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "chainopt-inventory-add-product-lambda-arn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
+
+# GetProducts Lambda Permission
+  GetAllProductsLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "chainopt-inventory-get-all-products-lambda-arn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
+
+# GetProduct Lambda Permission
+  GetProductLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "chainopt-inventory-get-product-lambda-arn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
+
+# DeleteProduct Lambda Permission
+  DeleteProductLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "chainopt-inventory-delete-product-lambda-arn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
+
+# GetAllProductsByWarehouseId Lambda Permission
+  GetAllProductsByWarehouseIdLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "chainopt-inventory-get-all-products-by-warehouse-id-lambda-arn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
+
+# UpdateProduct Lambda Permission
+  UpdateProductLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "chainopt-inventory-update-product-lambda-arn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
+
+# TransferProduct Lambda Permission
+  TransferProductLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "chainopt-inventory-transfer-product-lambda-arn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
+
+######################################################
+# Lambda Permissions for Orders Functions
+######################################################
+# CreateOrder Lambda Permission
+  CreateOrderLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "chainopt-orders-create-order-function-arn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
+
+# GetOrders Lambda Permission
+  GetOrdersLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "chainopt-orders-get-orders-function-arn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
+
+# GetOrder Lambda Permission
+  GetOrderLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "chainopt-orders-get-order-function-arn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
+
+# UpdateOrder Lambda Permission
+  UpdateOrderLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "chainopt-orders-update-order-function-arn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
+
+# DeleteOrder Lambda Permission
+  DeleteOrderLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "chainopt-orders-delete-order-function-arn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
+
+######################################################
+# Lambda Permissions for Prediction Functions
+######################################################
+# Prediction Lambda Permission
+  PredictionLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "chainopt-forecast-prediction-function-arn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
+
+# PredictionSummary Lambda Permission
+  PredictionSummaryLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        Fn::Sub: "chainopt-forecast-prediction-summary-function-arn-${Environment}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ChainOptApi}/*"
+
+Outputs:
+  ChainOptApiUrl:
+    Description: "ChainOpt API URL"
+    Value: !Sub "https://${ChainOptApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
+    Export:
+      Name: !Sub "ChainOptApiUrl-${Environment}"
